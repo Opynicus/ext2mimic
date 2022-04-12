@@ -7,8 +7,8 @@
 
 #include <string>
 #include <fstream>
+#include "params.h"
 
-#define IMAGEFILENAME "data.img"        //定义image映像文件
 
 using namespace std;
 
@@ -25,11 +25,13 @@ private:
 public:
     image();
     void initImage();                           //初始化
-    string setFileName(string &file_name);      //设置文件名
+    void setFileName(string &file_name);      //设置文件名
     string getFileName();                       //获得文件名
     FILE *get_file_write();                     //文件写入指针
-    FILE *set_file_write(FILE *file_write);     //设置文件写入指针
+    void set_file_write(FILE *file_write);     //设置文件写入指针
     bool existImage();
+    int writeImage(unsigned int sectorid, void *content, int len);
+    int readImage(unsigned int sectorid, void *content, int len);
 
 };
 
