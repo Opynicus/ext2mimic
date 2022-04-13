@@ -5,22 +5,29 @@
 #ifndef EXT2MIMIC_PARAMS_H
 #define EXT2MIMIC_PARAMS_H
 
-#define INODE_NUM (1 << 16)                             // inode总数65536
+#include <iostream>
+using namespace std;
+
+#define IMAGE_FILE_NAME "disk.img"
+
+#define INODE_NUM 640                                   // inode总数640个
 #define SUPERBLOCK_SIZE 1024                            // superblock大小（byte）
-#define INODE_SIZE 128                                  // inode大小（byte）
-#define BLOCK_SIZE 4096                                 // block大小（byte）
-#define BLOCK_NUM (SECTOR_NUM-1-2048-2-8)             // block个数（260085）
+#define INODE_SIZE 128                                  // inode大小（byte）128B
+#define BLOCK_SIZE 512                                 // block大小（byte), 512B
+#define BLOCK_NUM 10240                                 // 块号数为10240,大小为 10240 * 4096B
 
-#define SUPERBLOCK_START_SECTOR 0                            // inode开始所在扇区
-#define INODE_START_SECTOR 1                            // inode开始所在扇区
-#define INODE_BITMAP_START_SECTOR (1 + INODE_NUM * INODE_SIZE / SECTOR_SIZE)                   // inode位示图开始所在扇区
-#define BLOCK_BITMAP_START_SECTOR (INODE_BITMAP_START_SECTOR + INODE_NUM / (SECTOR_SIZE * 8) )     // block位示图开始所在扇区
-#define BLOCK_START_SECTOR (BLOCK_BITMAP_START_SECTOR + SECTOR_NUM / (SECTOR_SIZE * 8))           // block开始所在扇区
+#define MAX_FREE_BLOCKS 64                              // 空闲块堆栈大小，一个空闲堆栈最多能存多少个磁盘块地址
 
-#define IMAGE_FILE_NAME "disk.img"        //定义image映像文件
-#define IMAGE_SIZE (1<<30)                           // 文件系统image总大小（1g = 2^30byte）
-#define SECTOR_SIZE 4096                             // 文件系统image单个sector大小（byte）
-#define SECTOR_NUM (IMAGE_SIZE / BLOCK_SIZE)   // sector个数（262144）
+#define SUPERBLOCK_START_ADDR 0                         // 超级块 偏移地址,占一个磁盘块
+#define BLOCK_BITMAP_START_ADDR (1*BLOCK_SIZE)          // block位图 偏移地址，占8个磁盘块，最多监控 512 * 8 个磁盘块的状态
+#define INODE_BITMAP_START_ADDR (BLOCK_BITMAP_START_ADDR+ 8 * BLOCK_SIZE)    // inode位图 偏移地址，占2个磁盘块，最多监控 512 * 2 个inode的状态
+#define INODE_TABLE_START_ADDR (INODE_BITMAP_START_ADDR+ 2 * BLOCK_SIZE)    // inode节点区 偏移地址，占 INODE_NUM/(BLOCK_SIZE/INODE_SIZE) 个磁盘块
+#define DATA_BLOCK_START_ADDR (INODE_TABLE_START_ADDR + INODE_NUM/(BLOCK_SIZE/INODE_SIZE) * BLOCK_SIZE)//block数据区 偏移地址 ，占 INODE_NUM 个磁盘块
+
+#define TOTALSIZE (DATA_BLOCK_START_ADDR + BLOCK_NUM * BLOCK_SIZE)       //总大小
+
+extern bool inode_bitmap[INODE_NUM];				//inode位图
+extern bool block_bitmap[BLOCK_NUM];				//磁盘块位图
 
 
 #endif //EXT2MIMIC_PARAMS_H
