@@ -4,63 +4,71 @@
 
 #include "fs.h"
 
-bool inode_bitmap[INODE_NUM];				//inode位图
-bool block_bitmap[BLOCK_NUM];				//磁盘块位图
-
 fs::fs() {
     cout<< "开始初始化文件系统" << endl;
 }
 
 int fs::initFS() {
+    //初始化image
+    img.initImage();
     //初始化inode位图
-    memset(inode_bitmap,0,sizeof(inode_bitmap));
-    fseek(img.file_write,INODE_BITMAP_START_ADDR,SEEK_SET);
-    fwrite(inode_bitmap,sizeof(inode_bitmap),1,img.file_write);
-    cout<< "初始化inode位图完成" << endl;
-
+    bit_map.initInodeBitmap(img.file_write);
     //初始化block位图
-    memset(block_bitmap,0,sizeof(block_bitmap));
-    fseek(img.file_write,BLOCK_BITMAP_START_ADDR,SEEK_SET);
-    fwrite(block_bitmap,sizeof(block_bitmap),1,img.file_write);
-    cout<< "初始化block位图完成" << endl;
-
-    /*
-     * 参考 https://blog.csdn.net/Ajay666/article/details/73569654，初始化磁盘块区，根据成组链接法组织
-     */
-    for(int i = BLOCK_NUM / MAX_FREE_BLOCKS - 1;i >= 0; i--) {	//一共INODE_NUM/MAX_FREE_BLOCKS，一组FREESTACKNUM（128）个磁盘块 ，第一个磁盘块作为索引
-        if(i == BLOCK_NUM / MAX_FREE_BLOCKS - 1) {
-            super_block.free_block_stack[0] = -1;	//没有下一个空闲块了
-        }
-        else {
-            int fuck = DATA_BLOCK_START_ADDR + (i + 1) * MAX_FREE_BLOCKS * BLOCK_SIZE;
-            super_block.free_block_stack[0] = DATA_BLOCK_START_ADDR + (i + 1) * MAX_FREE_BLOCKS * BLOCK_SIZE;	//指向下一个空闲块
-        }
-        for(int j = 1;j < MAX_FREE_BLOCKS; j++) {
-            int shit = DATA_BLOCK_START_ADDR + (i * MAX_FREE_BLOCKS + j) * BLOCK_SIZE;
-            super_block.free_block_stack[j] = DATA_BLOCK_START_ADDR + (i * MAX_FREE_BLOCKS + j) * BLOCK_SIZE;
-        }
-        fseek(img.file_write,DATA_BLOCK_START_ADDR + i * MAX_FREE_BLOCKS * BLOCK_SIZE,SEEK_SET);
-        fwrite(super_block.free_block_stack,sizeof(super_block.free_block_stack),1,img.file_write);	//填满这个磁盘块，4096字节
-    }
-
+    bit_map.initBlockBitmap(img.file_write);
+    //初始化磁盘块区，根据成组链接法组织
+    super_block.initFreeBlockStack(img.file_write);
     //超级块写入到虚拟磁盘文件
-    fseek(img.file_write,SUPERBLOCK_START_ADDR,SEEK_SET);
-    fwrite(&super_block,sizeof(superBlock),1,img.file_write);
-
-    fflush(img.file_write);
-    cout<< "超级块写入到img文件完成" << endl;
+    super_block.writeSuperBlock2img(img.file_write);
 
     //读取inode位图
-    fseek(img.file_read,INODE_BITMAP_START_ADDR,SEEK_SET);
-    fread(inode_bitmap,sizeof(inode_bitmap),1,img.file_read);
-    cout<< "读取inode位图完成" << endl;
+    bit_map.readInodeBitmap(img.file_read);
 
     //读取block位图
-    fseek(img.file_read,BLOCK_BITMAP_START_ADDR,SEEK_SET);
-    fread(block_bitmap,sizeof(block_bitmap),1,img.file_read);
-
-    fflush(img.file_read);
-    cout<< "读取block位图完成" << endl;
+    bit_map.readBlockBitmap(img.file_read);
+//    //打印inode位图
+//    bit_map.printInodeBitmap();
+//    //打印block位图
+//    bit_map.printBlockBitmap();
+//
+//    super_block.printSuperBlockInfo();
 
 }
 
+int fs::ialloc() {
+    if (super_block.getFreeInodeNum() == 0) {
+        cout << "已无空闲Inode可供分配" <<endl;
+        return -1;
+    } else {
+        int i;
+        for (bool isUsed : bit_map.inode_bitmap) {   //在inode位图上找到空闲的位置
+            if (!isUsed) {
+                i = isUsed;
+                break;
+            }
+        }
+        super_block.writeOneBlock(img.file_write);  //superBlock被写入,inode_num--
+        bit_map.occupyOneInode(img.file_write, i);       //更新inode位图
+
+        return INODE_TABLE_START_ADDR + i * INODE_SIZE; //返回Inode位置
+    }
+}
+
+int fs::ifree(long addr) {
+    if ( (addr - INODE_TABLE_START_ADDR) % INODE_SIZE != 0 ){
+        printf("Warning: 需要inode节点起始位置\n");
+        return -1;
+    }
+    inodeid_t ino = (addr - INODE_TABLE_START_ADDR) % INODE_SIZE;
+    if (!bit_map.inode_bitmap[ino]) {
+        cout << "Warning: 空闲节点无需释放" << endl;
+        return -1;
+    }
+
+    bit_map.clearInodeBitmap(img.file_write, addr);
+    super_block.freeOneBlock(img.file_write);
+
+    bit_map.freeOneInode(img.file_write, ino);
+
+    return 0;
+
+}

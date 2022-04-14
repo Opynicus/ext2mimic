@@ -6,7 +6,6 @@
 #define EXT2MIMIC_IMAGE_H
 
 #include <string>
-#include <fstream>
 #include "params.h"
 
 

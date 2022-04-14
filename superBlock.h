@@ -5,7 +5,6 @@
 #ifndef EXT2MIMIC_SUPERBLOCK_H
 #define EXT2MIMIC_SUPERBLOCK_H
 #include "params.h"
-#include <ctime>
 #include "image.h"
 
 
@@ -29,16 +28,23 @@ private:
     time_t last_write_time;                 // 上次写入时间
     time_t last_mount_time;                 // 上次挂载时间
 
-    unsigned int superBlock_startAddr;      // superBlock开始所在扇区
-    unsigned int block_bitmap_StartAddr;    // block位示图开始所在扇区
-    unsigned int inode_bitmap_StartAddr;    // inode位示图开始所在扇区
-    unsigned int inode_StartAddr;           // inode开始所在扇区
-    unsigned int block_StartAddr;           // block开始所在扇区
+    unsigned int superBlock_startAddr;      // superBlock开始所在位置
+    unsigned int block_bitmap_StartAddr;    // block位示图开始所在位置
+    unsigned int inode_bitmap_StartAddr;    // inode位示图开始所在位置
+    unsigned int inode_StartAddr;           // inode开始所在位置
+    unsigned int block_StartAddr;           // block开始所在位置
 
 public:
+    int free_block_stack[MAX_FREE_BLOCKS+1];                                // 成组链接空闲块堆栈
     superBlock();                                                           // 初始化
+    void initFreeBlockStack(FILE* fw);                                      //初始化磁盘块区，根据成组链接法组织
+    void writeSuperBlock2img(FILE* img);                                    //将superBlock中的内容写入img
+    unsigned int getFreeInodeNum() const;
+    void setFreeInodeNum(unsigned int num);
+    void printSuperBlockInfo() const;                                             //打印superBlock信息
+    void writeOneBlock(FILE* fw);                                             //更新superBlock
+    void freeOneBlock(FILE* fw);                                             //更新superBlock
 
-    int free_block_stack[MAX_FREE_BLOCKS+1];            // 成组链接空闲块堆栈
 };
 
 
