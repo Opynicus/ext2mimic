@@ -13,6 +13,7 @@
 using namespace std;
 
 #define IMAGE_FILE_NAME "disk.img"
+#define MAX_FILE_NAME 26
 
 #define INODE_NUM 640                                   // inode总数640个
 #define SUPERBLOCK_SIZE 1024                            // superblock大小（byte）
@@ -29,6 +30,8 @@ using namespace std;
 #define INODE_BITMAP_START_ADDR (BLOCK_BITMAP_START_ADDR+ 8 * BLOCK_SIZE)    // inode位图 偏移地址，占2个磁盘块，最多监控 512 * 2 个inode的状态
 #define INODE_TABLE_START_ADDR (INODE_BITMAP_START_ADDR+ 2 * BLOCK_SIZE)    // inode节点区 偏移地址，占 BLOCK_NUM_PER_INODE 个磁盘块
 #define DATA_BLOCK_START_ADDR (INODE_TABLE_START_ADDR + BLOCK_NUM_PER_INODE * BLOCK_SIZE)//block数据区 偏移地址 ，占 INODE_NUM 个磁盘块
+
+#define Dir_ITEM_NUM_PER_BLOCK (BLOCK_SIZE / 32 )
 
 #define TOTALSIZE (DATA_BLOCK_START_ADDR + BLOCK_NUM * BLOCK_SIZE)       //总大小
 

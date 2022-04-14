@@ -18,7 +18,8 @@ public:
     void readBlockBitmap(FILE* fr);                         //读取block位图
     void occupyOneInode(FILE *fw, unsigned int pos);
     void freeOneInode(FILE *fw, unsigned int pos);
-    void clearInodeBitmap(FILE *fw, long addr);
+    void occupyOneBlock(FILE *fw, unsigned int pos);
+    void freeOneBlock(FILE *fw, unsigned int pos);
 
     void printInodeBitmap();                                //打印inode位图的信息
     void printBlockBitmap();                                //打印block位图的信息

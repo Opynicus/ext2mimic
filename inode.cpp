@@ -7,15 +7,21 @@
 #include "inode.h"
 #include "params.h"
 
-void inode::initInode(string cur_user_name, string cur_group_name) {
+void inode::initInode(string cur_user_name, string cur_group_name, int addr) {
     inode_id = 0;
+    mode = MODE_DIR | DIR_DEF_PERMISSION;
     create_time = time(NULL);
     last_read_time = time(NULL);
     last_modified_time = time(NULL);
     user_name = cur_user_name;
     group_name = cur_group_name;
     link_num = 1;                               //初始化时当前目录只有根目录
-    //block_id0[0] =
+    memset(block_id0,0,sizeof(block_id0));
+    block_id0[0] = addr;
+    size = BLOCK_SIZE;
+    block_id1 = -1;
+
+
 
 }
 
@@ -45,4 +51,11 @@ void inode::debugInfo() {
     cout << "create_time:           " << create_time << endl;
     cout << "last_read_time:           " << last_read_time << endl;
     cout << "last_modified_time:           " << last_modified_time << endl;
+}
+
+void inode::clearInode(FILE* fw, long addr) {
+    inode tmp;
+    fseek(fw,addr,SEEK_SET);
+    fwrite(&tmp,sizeof(tmp),1,fw);
+    fflush(fw);
 }

@@ -16,6 +16,7 @@ superBlock::superBlock() {
     block_size = BLOCK_SIZE;
 
     memset(free_block_stack,0,sizeof(free_block_stack));
+    free_addr = DATA_BLOCK_START_ADDR;
 
     create_time = time(nullptr);
     last_mount_time = 0;
@@ -80,14 +81,12 @@ void superBlock::printSuperBlockInfo() const {
 
 
 void superBlock::writeOneBlock(FILE* fw) {
-    free_inode_num--;
     fseek(fw, SUPERBLOCK_START_ADDR, SEEK_SET);
     fwrite(this, sizeof(superBlock), 1, fw);
     fflush(fw);
 }
 
 void superBlock::freeOneBlock(FILE* fw) {
-    free_inode_num++;
     fseek(fw, SUPERBLOCK_START_ADDR, SEEK_SET);
     fwrite(this, sizeof(superBlock), 1, fw);
     fflush(fw);
@@ -95,3 +94,15 @@ void superBlock::freeOneBlock(FILE* fw) {
 
 unsigned int superBlock::getFreeInodeNum() const {return free_inode_num;}
 void superBlock::setFreeInodeNum(unsigned int num) {free_inode_num = num;}
+
+unsigned int superBlock::getFreeBlockNum() const {return free_block_num;}
+
+void superBlock::setFreeBlockNum(unsigned int num) {
+    free_block_num = num;
+}
+
+void superBlock::clearOneBlock(FILE *fw, long addr) {
+    char tmp[BLOCK_SIZE] = {0};
+    fseek(fw,addr,SEEK_SET);
+    fwrite(tmp,sizeof(tmp),1,fw);
+}

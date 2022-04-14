@@ -3,4 +3,4 @@ project(ext2mimic)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(osFileManager main.cpp image.cpp image.h inode.h inode.cpp superBlock.cpp superBlock.h params.h fs.cpp fs.h bitMap.cpp bitMap.h)
+add_executable(osFileManager main.cpp image.cpp image.h inode.h inode.cpp superBlock.cpp superBlock.h params.h fs.cpp fs.h bitMap.cpp bitMap.h Dir.cpp Dir.h)

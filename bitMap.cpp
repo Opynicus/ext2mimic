@@ -100,9 +100,17 @@ void bitMap::freeOneInode(FILE *fw, unsigned int pos) {
     fflush(fw);
 }
 
-void bitMap::clearInodeBitmap(FILE *fw, long addr) {
-    inode tmp;
-    fseek(fw,addr,SEEK_SET);
-    fwrite(&tmp,sizeof(tmp),1,fw);
+
+void bitMap::occupyOneBlock(FILE *fw, unsigned int pos) {
+    block_bitmap[pos] = true;
+    fseek(fw,BLOCK_BITMAP_START_ADDR + pos,SEEK_SET);
+    fwrite(&block_bitmap[pos], sizeof(bool), 1, fw);
+    fflush(fw);
+}
+
+void bitMap::freeOneBlock(FILE *fw, unsigned int pos) {
+    block_bitmap[pos] = false;
+    fseek(fw,BLOCK_BITMAP_START_ADDR + pos,SEEK_SET);
+    fwrite(&block_bitmap[pos], sizeof(bool), 1, fw);
     fflush(fw);
 }

@@ -36,14 +36,18 @@ private:
 
 public:
     int free_block_stack[MAX_FREE_BLOCKS];          // 成组链接空闲块堆栈
+    int free_addr;                                  // 成组链接空闲块堆栈指向的空闲地址
     superBlock();                                   // 初始化
     void initFreeBlockStack(FILE* fw);              //初始化磁盘块区，根据成组链接法组织
     void writeSuperBlock2img(FILE* img);            //将superBlock中的内容写入img
     unsigned int getFreeInodeNum() const;           //返回free_inode_num
+    unsigned int getFreeBlockNum() const;           //返回free_block_num
     void setFreeInodeNum(unsigned int num);         //修改free_inode_num
+    void setFreeBlockNum(unsigned int num);         //修改free_block_num
     void printSuperBlockInfo() const;               //打印superBlock信息
     void writeOneBlock(FILE* fw);                   //更新superBlock
     void freeOneBlock(FILE* fw);                    //更新superBlock
+    void clearOneBlock(FILE* fw, long addr);                    //更新superBlock
 
 };
 
