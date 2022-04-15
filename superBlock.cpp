@@ -18,7 +18,7 @@ superBlock::superBlock() {
     memset(free_block_stack,0,sizeof(free_block_stack));
     free_addr = DATA_BLOCK_START_ADDR;
 
-    create_time = time(nullptr);
+    create_time = time(NULL);
     last_mount_time = 0;
     last_write_time = 0;
 
@@ -56,7 +56,7 @@ void superBlock::writeSuperBlock2img(FILE *img) {
     fseek(img,SUPERBLOCK_START_ADDR,SEEK_SET);
     fwrite(this,sizeof(superBlock),1,img);
     fflush(img);
-    cout<< "超级块写入到img文件完成" << endl;
+    cout<< "SuperBlock写入到img文件完成" << endl;
 }
 
 
@@ -77,32 +77,4 @@ void superBlock::printSuperBlockInfo() const {
     cout << "inode开始所在位置为 " << inode_StartAddr << endl;
     cout << "block开始所在位置为 " << block_StartAddr << endl;
     cout << endl;
-}
-
-
-void superBlock::writeOneBlock(FILE* fw) {
-    fseek(fw, SUPERBLOCK_START_ADDR, SEEK_SET);
-    fwrite(this, sizeof(superBlock), 1, fw);
-    fflush(fw);
-}
-
-void superBlock::freeOneBlock(FILE* fw) {
-    fseek(fw, SUPERBLOCK_START_ADDR, SEEK_SET);
-    fwrite(this, sizeof(superBlock), 1, fw);
-    fflush(fw);
-}
-
-unsigned int superBlock::getFreeInodeNum() const {return free_inode_num;}
-void superBlock::setFreeInodeNum(unsigned int num) {free_inode_num = num;}
-
-unsigned int superBlock::getFreeBlockNum() const {return free_block_num;}
-
-void superBlock::setFreeBlockNum(unsigned int num) {
-    free_block_num = num;
-}
-
-void superBlock::clearOneBlock(FILE *fw, long addr) {
-    char tmp[BLOCK_SIZE] = {0};
-    fseek(fw,addr,SEEK_SET);
-    fwrite(tmp,sizeof(tmp),1,fw);
 }
