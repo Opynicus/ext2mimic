@@ -22,10 +22,11 @@ private:
     int nextUID;								//下一个要分配的用户标识号
     int nextGID;								//下一个要分配的用户组标识号
     char cur_user_name[MAX_FILE_NAME];          //当前登陆用户名
-    char cur_group_name[MAX_FILE_NAME];          //当前用户组名
+    char cur_group_name[MAX_FILE_NAME];         //当前用户组名
     char cur_dir_name[MAX_FILE_NAME];           //当前目录名
     char cur_user_dir_name[MAX_FILE_NAME];      //当前登陆用户目录名
-    bool isPermit(inode &cur);
+    bool isPermitRead(inode &cur);
+    bool isPermitWrite(inode &cur);
 public:
     fs(image& img, superBlock* super_block, bitMap* bit_map);
     bool Format();
@@ -37,6 +38,15 @@ public:
     int create(int parent_inode_addr, const char name[], char file_content[]);
     void chmod(int parent_inode_addr, const char name[], int mode);
     void ls(int parent_inode_addr);
+    int freeInode(int parent_inode_addr);
+    int freeBlock(int parent_inode_addr);
+    int rmdir(int parent_inode_addr, char name[]);
+    void rmrf(int parent_inode_addr);
+    void touch(int parent_inode_addr,char name[],char buf[]);
+    int rm(int parent_inode_addr, char name[]);
+    void exit();
+    void commandLine(char cmd[]);
+    void commandLinePrompt();
 };
 
 
