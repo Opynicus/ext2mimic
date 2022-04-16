@@ -32,6 +32,7 @@ using namespace std;
 #define DATA_BLOCK_START_ADDR (INODE_TABLE_START_ADDR + BLOCK_NUM_PER_INODE * BLOCK_SIZE)//block数据区 偏移地址 ，占 INODE_NUM 个磁盘块
 
 #define Dir_ITEM_NUM_PER_BLOCK (BLOCK_SIZE / 32 )
+#define BLOCK_ID0_NUM 10
 
 #define TOTALSIZE (DATA_BLOCK_START_ADDR + BLOCK_NUM * BLOCK_SIZE)       //总大小
 
@@ -48,9 +49,6 @@ using namespace std;
 #define OTHERS_X	1						//其它用户执行权限
 #define FILE_DEF_PERMISSION 0664			//文件默认权限
 #define DIR_DEF_PERMISSION	0755			//目录默认权限
-
-typedef unsigned int inodeid_t;
-typedef unsigned int blockid_t;
 
 #define ROOT_DIR_ADDR INODE_TABLE_START_ADDR
 
