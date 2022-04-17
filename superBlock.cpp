@@ -28,7 +28,7 @@ superBlock::superBlock() {
     inode_StartAddr = INODE_TABLE_START_ADDR;
     block_StartAddr = DATA_BLOCK_START_ADDR;
 
-    cout<< "initial superBlock completed" << endl;
+    ///cout<< "initial superBlock completed" << endl;
 }
 
 void superBlock::initFreeBlockStack(FILE* fw) {
@@ -56,7 +56,7 @@ void superBlock::writeSuperBlock2img(FILE *img) {
     fseek(img,SUPERBLOCK_START_ADDR,SEEK_SET);
     fwrite(this,sizeof(superBlock),1,img);
     fflush(img);
-    cout<< "SuperBlock写入到img文件完成" << endl;
+    //cout<< "SuperBlock写入到img文件完成" << endl;
 }
 
 

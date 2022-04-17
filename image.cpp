@@ -12,7 +12,7 @@ image::image() {
     this->file_write = nullptr;
 }
 
-void image::initImage() {
+bool image::initImage() {
     cout << "init image ......" << endl;
     if (!existImage()) {
         cout << "Warning: image file doesn't exist, try to create new one" << endl;
@@ -22,15 +22,18 @@ void image::initImage() {
             exit(-1);
         }
         this->file_read = fopen(IMAGE_FILE_NAME, "r");
-        cout << "Done" << endl;
+        cout << "create image !" << endl;
+        return false;
     } else {
         this->file_read = fopen(IMAGE_FILE_NAME, "r");
         this->file_write = fopen(IMAGE_FILE_NAME, "r+");
         if (this->file_write == nullptr) {
-            cout << "Error: open VHD failed" << endl;
+            cout << "Error: open image failed" << endl;
+            exit(-1);
         }
+        cout << "load image completed !" << endl;
+        return true;
     }
-    cout << "initial completed !" << endl;
 }
 
 

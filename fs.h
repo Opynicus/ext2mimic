@@ -47,6 +47,9 @@ public:
     void exit();
     void commandLine(char cmd[]);
     void commandLinePrompt();
+    static void fsInfo();
+    static void help();
+    void loadFs();
 };
 
 

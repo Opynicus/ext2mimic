@@ -18,7 +18,7 @@ public:
     FILE* file_read;                            //读文件
     FILE* file_write;                           //写文件
     image();
-    void initImage();                           //初始化
+    bool initImage();                           //初始化
     bool existImage();
 
 };
