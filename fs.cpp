@@ -29,6 +29,8 @@ void fs::loadFs() {
     fseek(img.file_read, SUPERBLOCK_START_ADDR, SEEK_SET);
     fread(super_block, sizeof(super_block), 1, img.file_read);
 
+    //super_block->printSuperBlockInfo();
+
     //读取inode位图
     fseek(img.file_read, INODE_BITMAP_START_ADDR, SEEK_SET);
     fread(bit_map->inode_bitmap, sizeof(bit_map->inode_bitmap), 1, img.file_read);
@@ -280,9 +282,9 @@ int fs::mkdir(int parent_inode_addr, char *name) {
         strcpy(p.group_name, cur_group_name);
         p.link_num = 2;	    //两个项，当前目录, "."和".."
 
-        //分配当前inode的blocks，写入两条记录 "." 和 ".."
-        int curblockAddr = bAlloc();
-        if(curblockAddr == -1) {
+        //分配当前inode的block，写入两条记录 "." 和 ".."
+        int cur_block_addr = bAlloc();
+        if(cur_block_addr == -1) {
             cout << "ERROR: alloc block failed" << endl;
             return 4;
         }
@@ -290,15 +292,15 @@ int fs::mkdir(int parent_inode_addr, char *name) {
         strcpy(dir2[0].file_name, ".");
         strcpy(dir2[1].file_name, "..");
         dir2[0].inodeAddr = cur_inode_addr;	            //当前目录inode地址
-        dir2[1].inodeAddr = parent_inode_addr;	                //父目录inode地址
+        dir2[1].inodeAddr = parent_inode_addr;	        //父目录inode地址
 
         //写入到当前目录的Block，一次写满一个Block
-        fseek(img.file_write, curblockAddr,SEEK_SET);
+        fseek(img.file_write, cur_block_addr,SEEK_SET);
         fwrite(dir2, sizeof(dir2), 1, img.file_write);
 
         //让新建的inode的第一个直接块指向被分配的Block地址
         memset(p.block_id0,-1,sizeof(p.block_id0));
-        p.block_id0[0] = curblockAddr;
+        p.block_id0[0] = cur_block_addr;
 
         p.size = super_block->block_size;
         p.block_id1 = -1;
@@ -452,7 +454,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
                 inode tmp{};
                 fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
                 fread(&tmp, sizeof(inode), 1, img.file_read);
-                if( ((tmp.mode>>9) &1)==0 ) {	//是文件且重名，不能创建文件
+                if( ((tmp.mode>>9) &1) == 0 ) {	//是文件且重名，不能创建文件
                     cout << "File already existed" << endl;
                     file_content[0] = '\0';
                     return 1;
@@ -644,11 +646,11 @@ void fs::ls(int parent_inode_addr) {
             fread(&tmp, sizeof(inode),1,img.file_read);
             fflush(img.file_read);
 
-            if( strcmp(dir[j].file_name, "")==0 ) {
+            if( strcmp(dir[j].file_name, "") == 0 ) {
                 continue;
             }
 
-            if(i > 2 && (strcmp(dir[j].file_name, ".")==0 || strcmp(dir[j].file_name, "..")== 0) ) {
+            if(i > 2 && (strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") ==  0) ) {
                 continue;
             }
 
@@ -699,7 +701,7 @@ bool fs::isPermitRead(inode &cur) {
     int file_mode;
     if(strcmp(cur_user_name, cur.user_name) ==0 || strcmp(cur_user_name, "root") == 0)
         file_mode = 6;
-    else if(strcmp(cur_group_name, cur.group_name)==0)
+    else if(strcmp(cur_group_name, cur.group_name) == 0)
         file_mode = 3;
     else
         file_mode = 0;
@@ -749,7 +751,7 @@ int fs::freeInode(int parent_inode_addr) {
         return -1;
     }
 
-    int inode_id = (parent_inode_addr - addr) / super_block->inode_size;
+    auto inode_id = static_cast<int>((parent_inode_addr - addr) / super_block->inode_size);
     if (!bit_map->inode_bitmap[inode_id] ) {  //inode未使用
         cout << "WARNING: unused inode " << inode_id  << endl;
         return 1;
@@ -788,7 +790,7 @@ int fs::freeBlock(int parent_inode_addr) {
         cout << "ERROR: invalid block addr" << endl;
         return -1;
     }
-    unsigned int block_id = static_cast<unsigned int>((parent_inode_addr - DATA_BLOCK_START_ADDR) / super_block->block_size);	//inode节点号
+    auto block_id = static_cast<unsigned int>((parent_inode_addr - DATA_BLOCK_START_ADDR) / super_block->block_size);	//inode节点号
     //该地址还未使用，不能释放空间
     if(!bit_map->block_bitmap[block_id]) {
         cout << "WARNING: unused block" << endl;
@@ -1025,7 +1027,7 @@ int fs::rmdir(int parent_inode_addr, char name[]) {
         cout << "Exceeded max file name length" << endl;
         return -1;
     }
-    if(strcmp(name, ".")==0 || strcmp(name, "..")==0) {
+    if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
         cout << "WARNING: only subDir can be deleted" << endl;
         return 1;
     }
@@ -1102,28 +1104,48 @@ void fs::commandLine(char *cmd) {
     char argv3[100];
     char buffer[100000];	//最大100K
     sscanf(cmd,"%s", argv1);
-    if(strcmp(argv1, "ls")==0) {
+    if(strcmp(argv1, "ls") == 0) {
         ls(cur_dir_addr);
     }
-    else if(strcmp(argv1, "cd")==0) {
+    else if(strcmp(argv1, "cd") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            cout << "\n\tcd: missing operand" << endl << "\tTry 'cd [fileName]'\n" << endl;
+            return;
+        }
         cd(cur_dir_addr, argv2);
     }
-    else if(strcmp(argv1,"mkdir")==0) {
+    else if(strcmp(argv1,"mkdir") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            cout << "\n\tmkdir: missing operand" << endl << "\tTry 'mkdir [dirName]'\n" << endl;
+            return;
+        }
         mkdir(cur_dir_addr, argv2);
         chmod(cur_dir_addr, argv2, 0660);
     }
-    else if(strcmp(argv1, "rmdir")==0) {
+    else if(strcmp(argv1, "rmdir") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            cout << "\n\trmdir: missing operand" << endl << "\tTry 'rmdir [dirName]'\n" << endl;
+            return;
+        }
         rmdir(cur_dir_addr, argv2);
     }
-    else if(strcmp(argv1, "touch")==0) {
+    else if(strcmp(argv1, "touch") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            cout << "\n\ttouch: missing operand" << endl << "\tTry 'touch [fileName]'\n" << endl;
+            return;
+        }
         touch(cur_dir_addr, argv2, buffer);	//读取内容到buf
     }
-    else if(strcmp(argv1, "rm")==0) {	//删除一个文件
+    else if(strcmp(argv1, "rm") == 0) {	//删除一个文件
         sscanf(cmd, "%s%s" , argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            cout << "\n\trm: missing operand" << endl << "\tTry 'rm [fileName]'\n" << endl;
+            return;
+        }
         rm(cur_dir_addr, argv2);
     }
     else if(strcmp(argv1, "help") == 0 || strcmp(argv1, "h") == 0) {
@@ -1132,11 +1154,11 @@ void fs::commandLine(char *cmd) {
     else if(strcmp(argv1, "exit") == 0) {
         exit();
     }
-    else if(strcmp(argv1, "chmod")==0) {
+    else if(strcmp(argv1, "chmod") == 0) {
         argv2[0] = '\0';
         argv3[0] = '\0';
         sscanf(cmd, "%s%s%s", argv1, argv2, argv3);
-        if(strlen(argv2)==0 || strlen(argv3)==0) {
+        if(strlen(argv2) == 0 || strlen(argv3) == 0) {
             cout << "usage: chmod [filename] [permissions] : Change the file permissions" << endl;
         }
         else{
@@ -1174,8 +1196,8 @@ void fs::fsInfo() {
 void fs::help() {
     cout << endl;
     cout << "rm [fileName] : Remove file" << endl;
-    cout << "mkdir [dirName] : Create subdirectory" << endl;
-    cout << "rmdir [dirName] : Delete subdirectory" << endl;
+    cout << "mkdir [dirName] : Create dir" << endl;
+    cout << "rmdir [dirName] : Delete dir" << endl;
     cout << "cd [dirName] : Change current directory" << endl;
     cout << "ls : List the file and directory" << endl;
     cout << "chmod [fileName] [permissions] : Change the file permissions" << endl;

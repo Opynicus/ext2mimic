@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
         fileSystem.Format();
     }
     //cout << "initial completed !" << endl << endl;
-    fileSystem.fsInfo();
+    fs::fsInfo();
     fileSystem.is_login = true;
     while (fileSystem.is_login) {
         fileSystem.commandLinePrompt();

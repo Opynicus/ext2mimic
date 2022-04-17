@@ -14,19 +14,6 @@
 
 
 class fs {
-private:
-    image& img;
-    superBlock* super_block;
-    bitMap* bit_map;
-    int cur_dir_addr;                           //当前目录
-    int nextUID;								//下一个要分配的用户标识号
-    int nextGID;								//下一个要分配的用户组标识号
-    char cur_user_name[MAX_FILE_NAME];          //当前登陆用户名
-    char cur_group_name[MAX_FILE_NAME];         //当前用户组名
-    char cur_dir_name[MAX_FILE_NAME];           //当前目录名
-    char cur_user_dir_name[MAX_FILE_NAME];      //当前登陆用户目录名
-    bool isPermitRead(inode &cur);
-    bool isPermitWrite(inode &cur);
 public:
     fs(image& img, superBlock* super_block, bitMap* bit_map);
     bool Format();
@@ -50,6 +37,21 @@ public:
     static void fsInfo();
     static void help();
     void loadFs();
+
+protected:
+private:
+    image& img;
+    superBlock* super_block;
+    bitMap* bit_map;
+    int cur_dir_addr;                           //当前目录
+    int nextUID;								//下一个要分配的用户标识号
+    int nextGID;								//下一个要分配的用户组标识号
+    char cur_user_name[MAX_FILE_NAME];          //当前登陆用户名
+    char cur_group_name[MAX_FILE_NAME];         //当前用户组名
+    char cur_dir_name[MAX_FILE_NAME];           //当前目录名
+    char cur_user_dir_name[MAX_FILE_NAME];      //当前登陆用户目录名
+    bool isPermitRead(inode &cur);
+    bool isPermitWrite(inode &cur);
 };
 
 

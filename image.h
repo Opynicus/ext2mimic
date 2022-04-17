@@ -12,8 +12,6 @@
  * image光盘映像文件数据结构定义
  */
 class image {
-private:
-    string file_name;                           //文件名
 public:
     FILE* file_read;                            //读文件
     FILE* file_write;                           //写文件
@@ -21,6 +19,9 @@ public:
     bool initImage();                           //初始化
     bool existImage();
 
+protected:
+private:
+    string file_name;                           //文件名
 };
 
 

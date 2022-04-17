@@ -13,7 +13,6 @@
  */
 
 class superBlock {
-private:
 public:
     unsigned int inode_num;                         // inode总量，最大2^16 = 65535
     unsigned int block_num;                         // block总量，最大2^32 = 4294967296
@@ -42,6 +41,8 @@ public:
     void writeSuperBlock2img(FILE* img);            //将superBlock中的内容写入img
     void printSuperBlockInfo() const;               //打印superBlock信息
 
+protected:
+private:
 };
 
 

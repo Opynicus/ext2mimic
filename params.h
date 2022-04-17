@@ -26,12 +26,12 @@ using namespace std;
 #define BLOCK_NUM_PER_INODE (INODE_NUM/(BLOCK_SIZE/INODE_SIZE))  //每个INODE节点占的磁盘块数(160)
 
 #define SUPERBLOCK_START_ADDR 0                         // 超级块 偏移地址,占一个磁盘块
-#define INODE_BITMAP_START_ADDR (1*BLOCK_SIZE)          // block位图 偏移地址，占20个磁盘块，最多监控 512 * 20 个磁盘块的状态
-#define BLOCK_BITMAP_START_ADDR (INODE_BITMAP_START_ADDR+ 2 * BLOCK_SIZE)    // inode位图 偏移地址，占2个磁盘块，最多监控 512 * 2 个inode的状态
-#define INODE_TABLE_START_ADDR (INODE_BITMAP_START_ADDR+ 20 * BLOCK_SIZE)    // inode节点区 偏移地址，占 BLOCK_NUM_PER_INODE 个磁盘块
+#define INODE_BITMAP_START_ADDR (1 * BLOCK_SIZE)          // block位图 偏移地址，占20个磁盘块，最多监控 512 * 20 个磁盘块的状态
+#define BLOCK_BITMAP_START_ADDR (INODE_BITMAP_START_ADDR + 2 * BLOCK_SIZE)    // inode位图 偏移地址，占2个磁盘块，最多监控 512 * 2 个inode的状态
+#define INODE_TABLE_START_ADDR (INODE_BITMAP_START_ADDR + 20 * BLOCK_SIZE)    // inode节点区 偏移地址，占 BLOCK_NUM_PER_INODE 个磁盘块
 #define DATA_BLOCK_START_ADDR (INODE_TABLE_START_ADDR + BLOCK_NUM_PER_INODE * BLOCK_SIZE)//block数据区 偏移地址 ，占 INODE_NUM 个磁盘块
 
-#define Dir_ITEM_NUM_PER_BLOCK (BLOCK_SIZE / 32 )
+#define Dir_ITEM_NUM_PER_BLOCK (BLOCK_SIZE / sizeof(unsigned int) / 8)       //16
 #define BLOCK_ID0_NUM 10
 
 #define TOTALSIZE (DATA_BLOCK_START_ADDR + BLOCK_NUM * BLOCK_SIZE)       //总大小
