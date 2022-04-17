@@ -2,7 +2,7 @@
 // Created by Opynicus on 2022/4/15.
 //
 
-#include "bitMap.h"
+#include "../include/bitMap.h"
 
 bitMap::bitMap() {
     memset(inode_bitmap,0,sizeof(inode_bitmap));

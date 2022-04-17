@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "fs.h"
+#include "../include/fs.h"
 
 /*
  *  文件系统初始化，将已经初始化的SuperBlock与BitMap传入fs类
@@ -1132,6 +1132,14 @@ void fs::commandLine(char *cmd) {
         }
         rmdir(cur_dir_addr, argv2);
     }
+    else if(strcmp(argv1, "vi") == 0) {
+        sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            cout << "\n\tvi: missing operand" << endl << "\tTry 'vi [fileName]'\n" << endl;
+            return;
+        }
+        fakeVi(cur_dir_addr, argv2, buffer);
+    }
     else if(strcmp(argv1, "touch") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
@@ -1205,4 +1213,171 @@ void fs::help() {
     cout << "touch [fileName] : Create a new empty file" << endl;
     cout << endl;
 
+}
+
+void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
+    if(strlen(name) >= MAX_FILE_NAME){
+        cout << "Exceeded max file name length" << endl;
+        return ;
+    }
+
+    //清空缓冲区
+    memset(buf,0,sizeof(buf));
+    int maxlen = 0;	//到达过的最大长度
+
+    //查找有无同名文件，有的话进入编辑模式，没有进入创建文件模式
+    Dir dir[Dir_ITEM_NUM_PER_BLOCK];	//临时目录清单
+
+    //从这个地址取出inode
+    inode cur, fileInode;
+    fseek(img.file_read,parent_inode_addr,SEEK_SET);
+    fread(&cur,sizeof(inode),1,img.file_read);
+
+    int i = 0,j;
+    int dno;
+    int fileInodeAddr = -1;	//文件的inode地址
+    bool isExist = false;	//文件是否已存在
+    while(i < BLOCK_NUM_PER_INODE) {
+        //160个目录项之内，可以直接在直接块里找
+        dno = i / Dir_ITEM_NUM_PER_BLOCK;	//在第几个直接块里
+
+        if(cur.block_id0[dno] == -1) {
+            i += Dir_ITEM_NUM_PER_BLOCK;
+            continue;
+        }
+        fseek(img.file_read,cur.block_id0[dno],SEEK_SET);
+        fread(dir,sizeof(dir),1,img.file_read);
+        fflush(img.file_read);
+        bool flag = false;
+        //输出该磁盘块中的所有目录项
+        for(j = 0; j < Dir_ITEM_NUM_PER_BLOCK; j++) {
+            if(strcmp(dir[j].file_name,name) == 0 ) {
+                //重名，取出inode，判断是否是文件
+                fseek(img.file_read,dir[j].inodeAddr,SEEK_SET);
+                fread(&fileInode,sizeof(inode),1,img.file_read);
+                if( ((fileInode.mode >> 9 ) & 1) == 0 ) {	//是文件且重名，打开这个文件，并编辑
+                    flag = true;
+                    fileInodeAddr = dir[j].inodeAddr;
+                    isExist = true;
+                    break;
+                }
+            }
+            i++;
+        }
+        if (flag) {
+            i--;
+            break;
+        }
+    }
+
+    //初始化vi
+    int cnt = 0;
+    system("cls");	//清屏
+
+    int window_x, window_y, cur_x, cur_y;
+
+    HANDLE handle_out;                              //定义一个句柄
+    CONSOLE_SCREEN_BUFFER_INFO screen_info;         //定义窗口缓冲区信息结构体
+    COORD pos = {0, 0};                             //定义一个坐标结构体
+
+    if(isExist){	//文件已存在，进入编辑模式，先输出之前的文件内容
+
+        //权限判断。判断文件是否可读
+        if(!isPermitRead(fileInode)) {
+            //不可读
+            cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+            return ;
+        }
+
+        //将文件内容读取出来，显示在，窗口上
+        int sumlen = fileInode.size;	//文件长度
+        int getlen = 0;	//取出来的长度
+        for(unsigned int i : fileInode.block_id0) {
+            char fileContent[1000] = {0};
+            if(i==-1){
+                continue;
+            }
+            //依次取出磁盘块的内容
+            fseek(img.file_read,i,SEEK_SET);
+            fread(fileContent,super_block->block_size,1,img.file_read);	//读取出一个磁盘块大小的内容
+            fflush(img.file_read);
+            //输出字符串
+            int curlen = 0;	//当前指针
+            while(curlen < super_block->block_size) {
+                if(getlen >= sumlen)	//全部输出完毕
+                    break;
+                printf("%c",fileContent[curlen]);	//输出到屏幕
+                buf[cnt++] = fileContent[curlen];	//输出到buf
+                curlen++;
+                getlen++;
+            }
+            if(getlen >= sumlen)
+                break;
+        }
+        maxlen = sumlen;
+    }
+
+    //获得输出之后的光标位置
+    handle_out = GetStdHandle(STD_OUTPUT_HANDLE);   //获得标准输出设备句柄
+    GetConsoleScreenBufferInfo(handle_out, &screen_info);   //获取窗口信息
+    window_x = screen_info.srWindow.Right - screen_info.srWindow.Left + 1;
+    window_y = screen_info.srWindow.Bottom - screen_info.srWindow.Top + 1;
+    cur_x = screen_info.dwCursorPosition.X;
+    cur_y = screen_info.dwCursorPosition.Y;
+
+
+    //进入vi
+    //先用vi读取文件内容
+    vimimic vi;
+    while (vi.method(buf, cnt, maxlen)){};  //退出循环代表编辑完毕
+    if(isExist){
+        //将buf内容写回文件的磁盘块
+        if(isPermitWrite(fileInode)) {	//可写
+            writefile(fileInode, fileInodeAddr, buf);
+        }
+        else{	//不可写
+            printf("Can't write\n");
+        }
+
+    }
+    else{	//是创建文件模式
+        if(isPermitWrite(cur)){
+            //可写。可以创建文件
+            create(parent_inode_addr,name,buf);	//创建文件
+        }
+        else{
+            printf("Can't write\n");
+            return ;
+        }
+    }
+}
+
+void fs::writefile(inode fileInode, int fileInodeAddr, char *buf) {
+    int len = strlen(buf);	//文件长度，单位为字节
+    for(int k = 0;k < len; k += super_block->block_size) {	//最多10次，10个磁盘快，即最多5K
+        //分配这个inode的磁盘块，从控制台读取内容
+        int curblockAddr;
+        if(fileInode.block_id0[k / super_block->block_size] == -1) {
+            //缺少磁盘块，申请一个
+            curblockAddr = bAlloc();
+            if(curblockAddr == -1) {
+                cout << "block alloc failed" << endl;
+                return ;
+            }
+            fileInode.block_id0[k / super_block->block_size] = curblockAddr;
+        }
+        else{
+            curblockAddr = fileInode.block_id0[k / super_block->block_size];
+        }
+        //写入到当前目录的磁盘块
+        fseek(img.file_write,curblockAddr,SEEK_SET);
+        fwrite(buf+k,super_block->block_size,1,img.file_write);
+        fflush(img.file_write);
+    }
+    //更新该文件大小
+    fileInode.size = len;
+    fileInode.last_modified_time = time(NULL);
+    fseek(img.file_write,fileInodeAddr,SEEK_SET);
+    fwrite(&fileInode,sizeof(inode),1,img.file_write);
+    fflush(img.file_write);
 }

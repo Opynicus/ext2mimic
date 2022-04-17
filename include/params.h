@@ -9,6 +9,8 @@
 #include <ctime>
 #include <cstring>
 #include <fstream>
+#include "windows.h"
+#include "conio.h"
 
 using namespace std;
 

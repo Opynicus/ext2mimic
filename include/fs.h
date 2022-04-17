@@ -11,6 +11,7 @@
 #include "inode.h"
 #include "Dir.h"
 #include "bitMap.h"
+#include "vimimic.h"
 
 
 class fs {
@@ -37,7 +38,7 @@ public:
     static void fsInfo();
     static void help();
     void loadFs();
-
+    void fakeVi(int parent_inode_addr,char name[],char buf[]);
 protected:
 private:
     image& img;
@@ -52,6 +53,7 @@ private:
     char cur_user_dir_name[MAX_FILE_NAME];      //当前登陆用户目录名
     bool isPermitRead(inode &cur);
     bool isPermitWrite(inode &cur);
+    void writefile(inode fileInode, int fileInodeAddr, char buf[]);
 };
 
 

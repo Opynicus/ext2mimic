@@ -4,8 +4,8 @@
 
 #include <cstring>
 #include <iostream>
-#include "inode.h"
-#include "params.h"
+#include "../include/inode.h"
+#include "../include/params.h"
 
 void inode::debugInfo() {
     cout << "inode_id:                 " << inode_id << endl;

@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "superBlock.h"
+#include "../include/superBlock.h"
 
 superBlock::superBlock() {
     inode_num = INODE_NUM;
