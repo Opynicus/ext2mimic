@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     if (imgExist) {
         fileSystem.loadFs();
     } else {
-        fileSystem.Format();
+        fileSystem.format();
     }
     //cout << "initial completed !" << endl << endl;
     fs::fsInfo();

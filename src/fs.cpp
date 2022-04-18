@@ -42,7 +42,7 @@ void fs::loadFs() {
 /*
  *  格式化img
  */
-bool fs::Format() {
+bool fs::format() {
     //BitMap信息写入image
     fseek(img.file_write, INODE_BITMAP_START_ADDR, SEEK_SET);
     fwrite(bit_map->inode_bitmap,sizeof(bit_map->inode_bitmap),1, img.file_write);
@@ -629,7 +629,7 @@ void fs::ls(int parent_inode_addr) {
     int i = 0;
     while(i < cnt && i<BLOCK_NUM_PER_INODE) {
         Dir dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
-        if (cur.block_id0[i/Dir_ITEM_NUM_PER_BLOCK] == -1) {
+        if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
             i += Dir_ITEM_NUM_PER_BLOCK;
             continue;
         }
@@ -1009,7 +1009,7 @@ int fs::rm(int parent_inode_addr, char name[]) {
         }
 
     }
-    cout << name << ": No such file or directory" << endl;
+    cout << name << ": No such file" << endl;
     return 2;
 }
 
@@ -1132,6 +1132,14 @@ void fs::commandLine(char *cmd) {
         }
         rmdir(cur_dir_addr, argv2);
     }
+    else if (strcmp(argv1, "stat") == 0) {
+        sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            cout << "\n\tstat: missing operand" << endl << "\tTry 'stat [fileName]'\n" << endl;
+            return;
+        }
+        stat(cur_dir_addr, argv2);
+    }
     else if (strcmp(argv1, "vi") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
@@ -1139,6 +1147,9 @@ void fs::commandLine(char *cmd) {
             return;
         }
         fakeVi(cur_dir_addr, argv2, buffer);
+    }
+    else if (strcmp(argv1, "tree") == 0) {
+        tree(cur_dir_addr, 0);
     }
     else if (strcmp(argv1, "touch") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
@@ -1211,6 +1222,7 @@ void fs::help() {
     cout << "chmod [fileName] [permissions] : Change the file permissions" << endl;
     cout << "exit : Exit the file system" << endl;
     cout << "touch [fileName] : Create a new empty file" << endl;
+    cout << "stat [fileName | dirName] : Display file or dir detailed information" << endl;
     cout << endl;
 
 }
@@ -1378,4 +1390,105 @@ void fs::writefile(inode fileInode, int fileInodeAddr, char *buf) {
     fseek(img.file_write,fileInodeAddr,SEEK_SET);
     fwrite(&fileInode,sizeof(inode),1,img.file_write);
     fflush(img.file_write);
+}
+
+/*
+ *  stat指令，查看指定文件或目录具体相关信息
+ */
+int fs::stat(int parent_inode_addr, char name[]) {
+    if (strlen(name) >= MAX_FILE_NAME) {
+        cout << "Exceeded max file name length" << endl;
+        return -1;
+    }
+    inode cur{};
+    fseek(img.file_read, parent_inode_addr, SEEK_SET);
+    fread(&cur, sizeof(inode), 1, img.file_read);
+
+    int cnt = cur.link_num;
+
+    if (!isPermitRead(cur)) {
+        cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+        return 1;
+    }
+
+    //依次取出磁盘块
+    int i = 0;
+    while(i < BLOCK_NUM_PER_INODE) {	//小于BLOCK_NUM_PER_INODE
+        Dir dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
+
+        if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
+            i += Dir_ITEM_NUM_PER_BLOCK;
+            continue;
+        }
+
+        fseek(img.file_read, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+        fread(&dir, sizeof(dir), 1, img.file_read);
+
+        for(auto & j : dir) {
+            inode tmp{};
+            //取出该目录项的inode，判断该目录项是目录还是文件
+            fseek(img.file_read, j.inodeAddr, SEEK_SET);
+            fread(&tmp, sizeof(inode),1,img.file_read);
+            if ( strcmp(j.file_name, name) == 0) {
+                cout << "  File: \"" << j.file_name << "\"" << endl;
+                cout << "Size: " << tmp.size << "\t";
+                cout << "Block: " << 1 << "\t";
+                cout << "IO Block: " << BLOCK_SIZE << "\t";
+                if ( ( (tmp.mode >> 9) & 1 ) == 1 ) {
+                    cout << "directory file" << endl;
+                }
+                else{
+                    cout << "regular file" << endl;
+                }
+                cout << "Device: fd01h/64769d\t";
+                cout << "Inode: " << tmp.inode_id << "\t";
+                cout << "Access: (0";
+                int permiss_index = 8, idx = 0, temp = 0;
+                char auth[9];
+                while(permiss_index >= 0) {
+                    if ( ((tmp.mode >> permiss_index) & 1) == 1) {
+                        if (permiss_index % 3 == 2)	{
+                            temp += 4;
+                            auth[idx] = 'r';
+                        }
+                        if (permiss_index % 3 == 1)	{
+                            temp += 2;
+                            auth[idx] = 'w';
+                        }
+                        if (permiss_index % 3 == 0)	{
+                            temp += 1;
+                            auth[idx] = 'x';
+                        }
+                    }
+                    else{
+                        auth[idx] = '-';
+                    }
+                    idx++;
+                    permiss_index--;
+                    if (idx % 3 == 0) {
+                        cout << temp;
+                        temp = 0;
+                    }
+                }
+                cout << "/";
+                if ( ( (tmp.mode >> 9) & 1 ) == 1 ) {
+                    cout << "d";
+                }
+                else{
+                    cout << "-";
+                }
+                //<< tmp.mode << "/"
+                cout << auth << ")\t";
+                cout << "User: "<< tmp.user_name << "\t";
+                cout << "Group: "<< tmp.group_name << endl;
+                cout << "Access: "<< ctime(&tmp.create_time) << endl;
+                cout << "Modify: "<< ctime(&tmp.last_modified_time) << endl;
+                cout << "Change: "<< ctime(&tmp.last_read_time) << endl;
+                return 0;
+            }
+            i++;
+        }
+    }
+    cout << name << ": No such file" << endl;
+    return 2;
 }

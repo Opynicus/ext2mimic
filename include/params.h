@@ -11,6 +11,7 @@
 #include <fstream>
 #include "windows.h"
 #include "conio.h"
+#include <vector>
 
 using namespace std;
 
@@ -53,5 +54,7 @@ using namespace std;
 #define DIR_DEF_PERMISSION	0755			//目录默认权限
 
 #define ROOT_DIR_ADDR INODE_TABLE_START_ADDR
+
+constexpr int MAX_LOOP_NUM = 3;
 
 #endif //EXT2MIMIC_PARAMS_H

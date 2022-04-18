@@ -17,7 +17,7 @@
 class fs {
 public:
     fs(image& img, superBlock* super_block, bitMap* bit_map);
-    bool Format();
+    bool format();
     int mkdir(int parent_inode_addr, char name[]);
     bool is_login;
     int cd(int parent_inode_addr, const char name[]);
@@ -39,6 +39,7 @@ public:
     static void help();
     void loadFs();
     void fakeVi(int parent_inode_addr,char name[],char buf[]);
+    int stat(int parent_inode_addr, char name[]);
 protected:
 private:
     image& img;
