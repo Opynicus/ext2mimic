@@ -16,10 +16,10 @@
 
 class fs {
 public:
+    bool is_login;
     fs(image& img, superBlock* super_block, bitMap* bit_map);
     bool format();
     int mkdir(int parent_inode_addr, char name[]);
-    bool is_login;
     int cd(int parent_inode_addr, const char name[]);
     int iAlloc();
     int bAlloc();
@@ -40,6 +40,7 @@ public:
     void loadFs();
     void fakeVi(int parent_inode_addr,char name[],char buf[]);
     int stat(int parent_inode_addr, char name[]);
+    int rename(int parent_inode_addr, char ori_name[], char modify_name[]);
 protected:
 private:
     image& img;

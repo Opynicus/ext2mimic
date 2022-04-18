@@ -55,6 +55,4 @@ using namespace std;
 
 #define ROOT_DIR_ADDR INODE_TABLE_START_ADDR
 
-constexpr int MAX_LOOP_NUM = 3;
-
 #endif //EXT2MIMIC_PARAMS_H
