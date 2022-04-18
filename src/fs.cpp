@@ -1216,7 +1216,7 @@ void fs::help() {
 }
 
 void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
-    if(strlen(name) >= MAX_FILE_NAME){
+    if(strlen(name) >= MAX_FILE_NAME) {
         cout << "Exceeded max file name length" << endl;
         return ;
     }
@@ -1280,7 +1280,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
     CONSOLE_SCREEN_BUFFER_INFO screen_info;         //定义窗口缓冲区信息结构体
     COORD pos = {0, 0};                             //定义一个坐标结构体
 
-    if(isExist){	//文件已存在，进入编辑模式，先输出之前的文件内容
+    if(isExist) {	//文件已存在，进入编辑模式，先输出之前的文件内容
 
         //权限判断。判断文件是否可读
         if(!isPermitRead(fileInode)) {
@@ -1294,7 +1294,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
         int getlen = 0;	//取出来的长度
         for(unsigned int i : fileInode.block_id0) {
             char fileContent[1000] = {0};
-            if(i==-1){
+            if(i==-1) {
                 continue;
             }
             //依次取出磁盘块的内容
@@ -1329,24 +1329,22 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
     //进入vi
     //先用vi读取文件内容
     vimimic vi;
-    while (vi.method(buf, cnt, maxlen)){};  //退出循环代表编辑完毕
-    if(isExist){
+    while (vi.method(buf, cnt, maxlen)){/*编辑中，编辑完退出循环*/};
+    fs::fsInfo();
+    if(isExist) {
         //将buf内容写回文件的磁盘块
         if(isPermitWrite(fileInode)) {	//可写
             writefile(fileInode, fileInodeAddr, buf);
-        }
-        else{	//不可写
-            printf("Can't write\n");
+        } else{	//不可写
+            cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
         }
 
-    }
-    else{	//是创建文件模式
-        if(isPermitWrite(cur)){
+    } else {	//是创建文件模式
+        if(isPermitWrite(cur)) {
             //可写。可以创建文件
             create(parent_inode_addr,name,buf);	//创建文件
-        }
-        else{
-            printf("Can't write\n");
+        } else {
+            cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
             return ;
         }
     }
