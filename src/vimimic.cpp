@@ -19,16 +19,16 @@ vimimic::vimimic() {
 
 bool vimimic::method(char *buf, int &cnt, int &max_len) {
     unsigned char c;
-    if (mode == 0) {    //命令行模式
+    if (mode == 0) {    //正常模式
         c = getch();
-        if (c == 'i' || c == 'a' || c == 'o') {    //插入模式
-            if (c == 'a') {
+        if (c == 'i' || c == 'a' || c == 'o') {    //切换为插入模式
+            if (c == 'a') { //在当前光标的下一个位置处插入
                 cur_x++;
                 if (cur_x == window_x) {
                     cur_x = 0;
                     cur_y++;
                 }
-            } else if (c == 'o') {
+            } else if (c == 'o') {  //在当前内容的下一行插入
                 buf[cnt] = '\n';
                 cur_y++;
                 if (cur_x == window_x) {
@@ -37,10 +37,10 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
                 }
             }
             if (cur_y > window_y - 2 || cur_y % (window_y - 1) == window_y - 2) {
-                //超过屏幕范围，翻页
+                //行数过长，需要翻页
                 if (cur_y % (window_y - 1) == window_y - 2)
                     printf("\n");
-                SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+                SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
                 for (int i = 0; i < window_x - 1; i++)
                     printf(" ");
                 redirectPos(handle_out, 0, cur_y + 1);
@@ -49,7 +49,7 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
             } else {
                 //显示 "插入模式"
                 redirectPos(handle_out, 0, window_y - 1);
-                SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+                SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
                 for (int i = 0; i < window_x - 1; i++)
                     printf(" ");
                 redirectPos(handle_out, 0, window_y - 1);
@@ -59,48 +59,48 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
             redirectPos(handle_out, cur_x, cur_y);
             mode = 1;
         }
-        else if(c == 224) {	//判断左右按键
+        else if (c == 224) {	//光标左右移动
             c = getch();
-            if(c == 75) {
+            if (c == 75) {
                 moveLeft(buf, cnt);
             }
-            else if(c == 77) {
+            else if (c == 77) {
                 moveRight(buf, cnt, max_len);
             }
             return true;
         }
-        else if (c == 'x') {
+        else if (c == 'x') {    //正常模式下的删除，'x'。
             return delChar(buf, cnt);
-        } else if (c == ':') {
-            if(cur_y-window_y + 2 > 0)
+        } else if (c == ':') {  //':'系列指令
+            if (cur_y-window_y + 2 > 0)
                 redirectPos(handle_out, 0, cur_y + 1);
             else
                 redirectPos(handle_out, 0, window_y - 1);
-            if(cur_y - window_y + 2 > 0)
+            if (cur_y - window_y + 2 > 0)
                 pos.X = 0, pos.Y = cur_y + 1;
             else
                 pos.X = 0, pos.Y = window_y - 1;
-            SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+            SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
             for(int i = 0;i < window_x - 1; i++)
                 printf(" ");
 
-            if(cur_y - window_y + 2 > 0)
+            if (cur_y - window_y + 2 > 0)
                 redirectPos(handle_out,0,cur_y + 1);
             else
                 redirectPos(handle_out,0,window_y - 1);
-            WORD att = BACKGROUND_RED | BACKGROUND_BLUE | FOREGROUND_INTENSITY; // 文本属性
+            WORD att = BACKGROUND_RED | BACKGROUND_BLUE | FOREGROUND_INTENSITY;
             SetConsoleTextAttribute(handle_out, FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE | FOREGROUND_GREEN  );	//设置文本颜色
             printf(":");
 
             char cur_c;
-            int input_char_num = 1;	//输入的字符计数
+            int input_char_num = 1;	//输入字符数量
             while((c = getch())) {
-                if(c == '\r') {	//回车
+                if (c == '\r') {	//回车
                     break;
                 }
-                else if(c == '\b') {	//退格，从命令条删除一个字符
+                else if (c == '\b') {	//退格，在下方删字符
                     input_char_num--;
-                    if(input_char_num == 0)
+                    if (input_char_num == 0)
                         break;
                     printf("\b");
                     printf(" ");
@@ -111,38 +111,38 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
                 printf("%c", cur_c);
                 input_char_num++;
             }
-            if(cur_c == 'q') { //退出
+            if (cur_c == 'q') { //vimimic出口
                 buf[cnt] = '\0';
-                SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+                SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
                 system("cls");
                 return false;
             }
             else {
-                if(cur_y - window_y + 2 > 0)
+                if (cur_y - window_y + 2 > 0)
                     redirectPos(handle_out,0, cur_y + 1);
                 else
                     redirectPos(handle_out,0, window_y - 1);
-                SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+                SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
                 for(int i = 0;i < window_x - 1; i++)
                     printf(" ");
 
-                if(cur_y - window_y + 2 > 0)
+                if (cur_y - window_y + 2 > 0)
                     redirectPos(handle_out, 0, cur_y + 1);
                 else
                     redirectPos(handle_out, 0, window_y - 1);
                 SetConsoleTextAttribute(handle_out, FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE | FOREGROUND_GREEN  );	//设置文本颜色
                 printf(" Wrong Command");
-                SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+                SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
                 redirectPos(handle_out, cur_x, cur_y);
             }
-        } else if(c == 27) {	//ESC，命令行模式，清状态条
+        } else if (c == 27) {	//按"esc"回到正常模式，保存最后修改的光标位置
             redirectPos(handle_out,0,window_y - 1);
-            SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+            SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
             for(int i = 0;i < window_x - 1; i++)
                 printf(" ");
             redirectPos(handle_out,cur_x,cur_y);
         }
-    } else if(mode == 1) {	//插入模式
+    } else if (mode == 1) {	//插入模式
 
         redirectPos(handle_out, window_x / 4 * 3, window_y - 1);
         int i = window_x / 4 * 3;
@@ -150,7 +150,7 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
             printf(" ");
             i++;
         }
-        if(cur_y > window_y - 2)
+        if (cur_y > window_y - 2)
             redirectPos(handle_out, window_x / 4 * 3, cur_y + 1);
         else
             redirectPos(handle_out, window_x/ 4 * 3, window_y - 1);
@@ -158,39 +158,39 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
         redirectPos(handle_out, cur_x, cur_y);
 
         c = getch();
-        if(c == 27) {	// ESC，进入命令模式
+        if (c == 27) {	//按"esc"回到正常模式
             mode = 0;
             //清状态条
             redirectPos(handle_out, 0, window_y-1);
-            SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+            SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
             redirectPos(handle_out, 0, window_y-1);
             for(int i = 0;i < window_x - 1;i++)
                 printf(" ");
             redirectPos(handle_out, cur_x, cur_y);
             return true;
-        } else if(c == '\b') {
+        } else if (c == '\b') {
             return delChar(buf, cnt);
         }
-        else if(c == 224) {	//判断左右按键
+        else if (c == 224) {//光标移动
             c = getch();
-            if(c == 75) {
+            if (c == 75) {
                 moveLeft(buf, cnt);
             }
-            else if(c == 77) {
+            else if (c == 77) {
                 moveRight(buf, cnt, max_len);
             }
             return true;
         }
-        if(c == '\r') {	//遇到回车
+        if (c == '\r') {	//回车
             printf("\n");
             cur_x = 0;
             cur_y++;
 
-            if(cur_y > window_y - 2 || cur_y % (window_y - 1) == window_y - 2) {
+            if (cur_y > window_y - 2 || cur_y % (window_y - 1) == window_y - 2) {
                 //超过这一屏，向下翻页
-                if(cur_y % (window_y - 1) == window_y - 2)
+                if (cur_y % (window_y - 1) == window_y - 2)
                     printf("\n");
-                SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
+                SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
                 for(int i = 0; i < window_x - 1;i++)
                     printf(" ");
                 redirectPos(handle_out, 0, cur_y+1);
@@ -198,26 +198,25 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
                 redirectPos(handle_out,0,cur_y);
             }
             buf[cnt++] = '\n';
-            if(cnt>max_len)
+            if (cnt > max_len)
                 max_len = cnt;
             return true;
         }
-        else{
+        else {
             printf("%c", c);
         }
-        //移动光标
+
         cur_x++;
-        if(cur_x == window_x) {
+        if (cur_x == window_x) {
             cur_x = 0;
             cur_y++;
 
-            if(cur_y > window_y - 2 || cur_y % (window_y - 1) == window_y - 2) {
-                //超过这一屏，向下翻页
-                if(cur_y % (window_y - 1) == window_y - 2)
+            if (cur_y > window_y - 2 || cur_y % (window_y - 1) == window_y - 2) {
+                //翻页
+                if (cur_y % (window_y - 1) == window_y - 2)
                     printf("\n");
-                SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
-                int i;
-                for(i=0;i<window_x-1;i++)
+                SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
+                for(int i = 0;i < window_x - 1;i++)
                     printf(" ");
                 redirectPos(handle_out,0,cur_y+1);
                 printf(" - Insert mode - ");
@@ -225,15 +224,15 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
             }
 
             buf[cnt++] = '\n';
-            if(cnt > max_len)
+            if (cnt > max_len)
                 max_len = cnt;
-            if(cur_y == window_y) {
+            if (cur_y == window_y) {
                 printf("\n");
             }
         }
         //记录字符
         buf[cnt++] = c;
-        if(cnt > max_len)
+        if (cnt > max_len)
             max_len = cnt;
     }
 }
@@ -252,12 +251,12 @@ void vimimic::redirectPos(HANDLE hout, int x, int y) {
  * 光标左移
  */
 void vimimic::moveLeft(char* buf, int &cnt) {  //左移
-    if(cnt != 0) {
+    if (cnt != 0) {
         cnt--;
         cur_x--;
-        if(buf[cnt] == '\n') {
+        if (buf[cnt] == '\n') {
             //上一个字符是回车
-            if(cur_y != 0)
+            if (cur_y != 0)
                 cur_y--;
             int k;
             cur_x = 0;
@@ -273,15 +272,15 @@ void vimimic::moveLeft(char* buf, int &cnt) {  //左移
  */
 void vimimic::moveRight(char *buf, int &cnt, int &max_len) { //右移
     cnt++;
-    if(cnt > max_len)
+    if (cnt > max_len)
         max_len = cnt;
     cur_x++;
-    if(cur_x == window_x) {
+    if (cur_x == window_x) {
         cur_x = 0;
         cur_y++;
-        if(cur_y > window_y-2 || cur_y % (window_y - 1) == window_y - 2) {
+        if (cur_y > window_y-2 || cur_y % (window_y - 1) == window_y - 2) {
             //超过这一屏，向下翻页
-            if(cur_y % (window_y - 1) == window_y - 2)
+            if (cur_y % (window_y - 1) == window_y - 2)
                 printf("\n");
             SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
             for(int i = 0;i < window_x - 1; i++)
@@ -292,16 +291,16 @@ void vimimic::moveRight(char *buf, int &cnt, int &max_len) { //右移
 }
 
 bool vimimic::delChar(char *buf, int &cnt) {
-    if(cnt == 0)	//已经退到最开始位置
+    if (cnt == 0)	//已经退到最开始位置
         return true;
     printf("\b");
     printf(" ");
     printf("\b");
     cur_x--;
     cnt--;	//删除字符
-    if(buf[cnt] == '\n') {
+    if (buf[cnt] == '\n') {
         //要删除的这个字符是回车，光标回到上一行
-        if(cur_y != 0)
+        if (cur_y != 0)
             cur_y--;
         cur_x = 0;
         for(int k = cnt - 1;buf[k] != '\n' && k >= 0; k--)
@@ -309,7 +308,7 @@ bool vimimic::delChar(char *buf, int &cnt) {
         redirectPos(handle_out, cur_x, cur_y);
         printf(" ");
         redirectPos(handle_out, cur_x, cur_y);
-        if(cur_y - window_y + 2 >= 0) {	//翻页时
+        if (cur_y - window_y + 2 >= 0) {	//翻页时
             redirectPos(handle_out, cur_x, 0);
             redirectPos(handle_out, cur_x, cur_y+1);
             SetConsoleTextAttribute(handle_out, screen_info.wAttributes); // 恢复原来的属性
