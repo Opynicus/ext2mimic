@@ -1148,9 +1148,6 @@ void fs::commandLine(char *cmd) {
         }
         fakeVi(cur_dir_addr, argv2, buffer);
     }
-    else if (strcmp(argv1, "tree") == 0) {
-        tree(cur_dir_addr, 0);
-    }
     else if (strcmp(argv1, "touch") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
