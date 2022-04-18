@@ -27,7 +27,7 @@ void fs::loadFs() {
     if (img.file_read == nullptr)
         return ;
     fseek(img.file_read, SUPERBLOCK_START_ADDR, SEEK_SET);
-    fread(super_block, sizeof(super_block), 1, img.file_read);
+    fread(super_block, sizeof(superBlock), 1, img.file_read);
 
     //super_block->printSuperBlockInfo();
 
@@ -363,13 +363,13 @@ int fs::iAlloc() {
  */
 int fs::bAlloc() {
     int top; //栈顶指针
-    if (super_block->free_block_num==0) {
+    if (super_block->free_block_num == 0) {
         cout << "WARNING: no free blocks can be alloc" << endl;
         return -1;
     }
     else{
         //如果已经是最后一块，此时top应该为0
-        top = (super_block->free_block_num-1) % MAX_FREE_BLOCKS;
+        top = (super_block->free_block_num - 1) % MAX_FREE_BLOCKS;
     }
     //将栈顶取出
     //如果已是栈底，将当前块号地址返回，即为栈底块号，并将栈底指向的新空闲块堆栈覆盖原来的栈
@@ -790,7 +790,7 @@ int fs::freeBlock(int parent_inode_addr) {
         cout << "ERROR: invalid block addr" << endl;
         return -1;
     }
-    auto block_id = static_cast<unsigned int>((parent_inode_addr - DATA_BLOCK_START_ADDR) / super_block->block_size);	//inode节点号
+    unsigned int block_id = static_cast<unsigned int>((parent_inode_addr - DATA_BLOCK_START_ADDR) / super_block->block_size);	//inode节点号
     //该地址还未使用，不能释放空间
     if (!bit_map->block_bitmap[block_id]) {
         cout << "WARNING: unused block" << endl;
@@ -900,8 +900,7 @@ void fs::rmrf(int parent_inode_addr) {
     fseek(img.file_read, parent_inode_addr,SEEK_SET);
     fread(&cur, sizeof(inode), 1, img.file_read);
 
-    int cnt = cur.link_num;
-    if (cnt <= 2) {  //只有当前目录 或 当前目录+上一级目录
+    if (cur.link_num <= 2) {  //只有当前目录 或 当前目录+上一级目录
         freeBlock(cur.block_id0[0]);    //释放inode直接块指向的Block
         freeInode(parent_inode_addr);                     //释放Inode
         return ;
@@ -916,24 +915,22 @@ void fs::rmrf(int parent_inode_addr) {
             i += Dir_ITEM_NUM_PER_BLOCK;
             continue;
         }
-
-        fseek(img.file_read, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK],SEEK_SET);
+        int cur_block_addr = cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK];
+        fseek(img.file_read, cur_block_addr,SEEK_SET);
         fread(&dir, sizeof(dir), 1, img.file_read);
 
         //目录项递归删除
         bool isFree = false;
         for(auto & j : dir) {
-
-            if (! (strcmp(j.file_name, ".") == 0 || strcmp(j.file_name, "..") == 0 || strcmp(j.file_name, "") == 0)) {
+            if (!(strcmp(j.file_name, ".") == 0 || strcmp(j.file_name, "..") == 0 || strcmp(j.file_name, "") == 0)) {
                 isFree = true;
                 rmrf(j.inodeAddr);
             }
             i++;
         }
-
         //Block已空，回收
         if (isFree)
-            freeBlock(cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK]);
+            freeBlock(cur_block_addr);
     }
     //inode已空，回收
     freeInode(parent_inode_addr);
@@ -944,7 +941,7 @@ void fs::rmrf(int parent_inode_addr) {
  * rm命令，移除单个文件
  * params: 当前目录位置，待移除文件名
  * 名字太长     return -1
- * 权限不够         return 1
+ * 权限不够    return 1
  * 成功       return 0
  * 不存在文件  return 2
  */
@@ -973,8 +970,8 @@ int fs::rm(int parent_inode_addr, char name[]) {
             i += Dir_ITEM_NUM_PER_BLOCK;
             continue;
         }
-
-        fseek(img.file_read, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+        int cur_block_addr = cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK];
+        fseek(img.file_read, cur_block_addr, SEEK_SET);
         fread(&dir, sizeof(dir), 1, img.file_read);
 
         for(auto & j : dir) {
@@ -995,7 +992,7 @@ int fs::rm(int parent_inode_addr, char name[]) {
                     //删除该目录条目，写回磁盘
                     strcpy(j.file_name, "");
                     j.inodeAddr = -1;
-                    fseek(img.file_write, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+                    fseek(img.file_write, cur_block_addr, SEEK_SET);
                     fwrite(&dir, sizeof(dir), 1, img.file_write);
                     cur.link_num--;
                     fseek(img.file_write, parent_inode_addr, SEEK_SET);
@@ -1042,7 +1039,6 @@ int fs::rmdir(int parent_inode_addr, char name[]) {
         cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
         return 2;
     }
-
     //依次取出磁盘块
     int i = 0;
     while(i < BLOCK_NUM_PER_INODE) {	//小于BLOCK_NUM_PER_INODE
@@ -1053,7 +1049,8 @@ int fs::rmdir(int parent_inode_addr, char name[]) {
             continue;
         }
         //取出磁盘块
-        fseek(img.file_read, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+        int cur_block_addr = cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK];
+        fseek(img.file_read, cur_block_addr, SEEK_SET);
         fread(&dir, sizeof(dir), 1, img.file_read);
 
         //找到要删除的目录
@@ -1069,7 +1066,7 @@ int fs::rmdir(int parent_inode_addr, char name[]) {
                     rmrf(j.inodeAddr);
                     strcpy(j.file_name, "");
                     j.inodeAddr = -1;
-                    fseek(img.file_write, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+                    fseek(img.file_write, cur_block_addr, SEEK_SET);
                     fwrite(&dir, sizeof(dir),1,img.file_write);
                     cur.link_num = static_cast<unsigned short>(cur.link_num - 1);
                     fseek(img.file_write, parent_inode_addr,SEEK_SET);
@@ -1148,6 +1145,14 @@ void fs::commandLine(char *cmd) {
         }
         fakeVi(cur_dir_addr, argv2, buffer);
     }
+    else if (strcmp(argv1, "rename") == 0) {
+        sscanf(cmd, "%s%s%s", argv1, argv2, argv3);
+        if (strcmp(argv2, "") == 0 || strcmp(argv3, "") == 0) {
+            cout << "\n\ttouch: missing operand" << endl << "\tTry 'touch [fileName]'\n" << endl;
+            return;
+        }
+        rename(cur_dir_addr, argv2, argv3);	//读取内容到buf
+    }
     else if (strcmp(argv1, "touch") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
@@ -1220,6 +1225,7 @@ void fs::help() {
     cout << "exit : Exit the file system" << endl;
     cout << "touch [fileName] : Create a new empty file" << endl;
     cout << "stat [fileName | dirName] : Display file or dir detailed information" << endl;
+    cout << "rename [fileName | dirName] [fileName | dirName] : Rename a file or dir" << endl;
     cout << endl;
 
 }
@@ -1487,5 +1493,56 @@ int fs::stat(int parent_inode_addr, char name[]) {
         }
     }
     cout << name << ": No such file" << endl;
+    return 2;
+}
+
+int fs::rename(int parent_inode_addr, char *ori_name, char *modify_name) {
+    if (strlen(modify_name) >= MAX_FILE_NAME) {
+        cout << "Exceeded max file name length" << endl;
+        return -1;
+    }
+    inode cur{};
+    fseek(img.file_read, parent_inode_addr, SEEK_SET);
+    fread(&cur, sizeof(inode), 1, img.file_read);
+
+    int cnt = cur.link_num;
+
+    if (!isPermitWrite(cur)) {
+        cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
+        return 1;
+    }
+
+    //依次取出磁盘块
+    int i = 0;
+    while(i < BLOCK_NUM_PER_INODE) {	//小于BLOCK_NUM_PER_INODE
+        Dir dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
+
+        if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
+            i += Dir_ITEM_NUM_PER_BLOCK;
+            continue;
+        }
+
+        fseek(img.file_read, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+        fread(&dir, sizeof(dir), 1, img.file_read);
+
+        for(auto & j : dir) {
+            inode tmp{};
+            //取出该目录项的inode，判断该目录项是目录还是文件
+            fseek(img.file_read, j.inodeAddr, SEEK_SET);
+            fread(&tmp, sizeof(inode),1,img.file_read);
+            if ( strcmp(j.file_name, ori_name) == 0) {
+                strcpy(j.file_name, modify_name);
+                fseek(img.file_write, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+                fwrite(&dir, sizeof(dir), 1, img.file_write);
+                fseek(img.file_write, parent_inode_addr, SEEK_SET);
+                fwrite(&cur, sizeof(inode), 1, img.file_write);
+                fflush(img.file_write);
+                return 0;
+            }
+            i++;
+        }
+
+    }
+    cout << ori_name << ": No such file" << endl;
     return 2;
 }

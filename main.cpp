@@ -24,5 +24,4 @@ int main(int argc, char** argv) {
         cin.getline(cmd, 100);
         fileSystem.commandLine(cmd);
     }
-
 }
