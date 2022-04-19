@@ -151,20 +151,20 @@ int fs::cd(int parent_inode_addr, const char *name) {
 
         //比较该组Dir块中的所有Dir
         for(auto & j : dir) {
-            if (strcmp(j.file_name, name) == 0 ) {      //找到输入name对应的目录
+            if (strcmp(j.file_name, name) == 0) {      //找到输入name对应的目录
                 inode tmp{};
                 //取出该目录项的inode，判断该目录项是目录还是文件
                 fseek(img.file_read, j.inodeAddr, SEEK_SET);
                 fread(&tmp, sizeof(inode),1,img.file_read);
 
-                if ( ( (tmp.mode >> 9) & 1 ) == 1 ) {     //文件为目录
+                if (((tmp.mode >> 9) & 1) == 1) {     //文件为目录
                     if (!isPermitRead(cur)) {
-                        cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+                        printf("WARNING: Permission denied(NO READ AUTHORITY)\n");
                         return 1;
                     }
 
                     cur_dir_addr = j.inodeAddr;
-                    if (strcmp(j.file_name, ".") == 0 ) {/*本目录，不动*/}
+                    if (strcmp(j.file_name, ".") == 0) {/*本目录，不动*/}
                     else if (strcmp(j.file_name, "..") == 0) {
                         //上一级目录
                         int k;
@@ -181,7 +181,7 @@ int fs::cd(int parent_inode_addr, const char *name) {
                         }
                     }
                     else {  //是子目录，直接连接
-                        if (cur_dir_name[strlen(cur_dir_name) - 1] != '/' ) {
+                        if (cur_dir_name[strlen(cur_dir_name) - 1] != '/') {
                             strcat(cur_dir_name, "/");  //末尾加上'/'
                         }
                         strcat(cur_dir_name, j.file_name);
@@ -193,7 +193,7 @@ int fs::cd(int parent_inode_addr, const char *name) {
         }
     }
     //没找到目录
-    cout << "can't find dir" << endl;
+    printf("can't find dir\n");
     return -1;
 }
 
@@ -210,7 +210,7 @@ int fs::cd(int parent_inode_addr, const char *name) {
  */
 int fs::mkdir(int parent_inode_addr, char *name) {
     if (strlen(name) >= MAX_FILE_NAME) {
-        cout << "Exceeded max file name length" << endl;
+        printf("Exceeded max file name length\n");
         return -1;
     }
     Dir dir[Dir_ITEM_NUM_PER_BLOCK];    //取Dir组
@@ -218,7 +218,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
     fseek(img.file_read, parent_inode_addr, SEEK_SET);
     fread(&cur, sizeof(inode), 1, img.file_read);
     if (!isPermitRead(cur)) {
-        cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+        printf("WARNING: Permission denied(NO READ AUTHORITY)\n");
         return 1;
     }
 
@@ -241,8 +241,8 @@ int fs::mkdir(int parent_inode_addr, char *name) {
                 inode tmp{};
                 fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
                 fread(&tmp, sizeof(inode), 1, img.file_read);
-                if ((( tmp.mode >> 9) & 1 )) {
-                    cout << "Dir already existed" << endl;
+                if (((tmp.mode >> 9) & 1)) {
+                    printf("Dir already existed\n");
                     return 2;
                 }
             } else {
@@ -270,7 +270,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
         //写入两条记录 "." ".."，分别指向当前inode节点地址，和父inode节点
         int cur_inode_addr = iAlloc();	//分配当前节点地址
         if (cur_inode_addr == -1) {
-            cout << "ERROR: no more inodes" << endl;
+            printf("ERROR: no more inodes\n");
             return 3;
         }
         dir[find_pos_j].inodeAddr = cur_inode_addr; //给这个新的目录分配的inode地址
@@ -285,7 +285,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
         //分配当前inode的block，写入两条记录 "." 和 ".."
         int cur_block_addr = bAlloc();
         if (cur_block_addr == -1) {
-            cout << "ERROR: alloc block failed" << endl;
+            printf("ERROR: alloc block failed\n");
             return 4;
         }
         Dir dir2[Dir_ITEM_NUM_PER_BLOCK] = {0};
@@ -322,7 +322,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
         return 0;
     }
     else{
-        cout << "ERROR: no free dir, mkdir failed" << endl;
+        printf("ERROR: no free dir, mkdir failed\n");
         return 5;
     }
 }
@@ -334,7 +334,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
  */
 int fs::iAlloc() {
     if (super_block->free_inode_num == 0) {
-        cout << "WARNING: no free inodes can be alloc" << endl;
+        printf("WARNING: no free inodes can be alloc\n");
         return -1;
     } else {
         int pos = 0;
@@ -364,7 +364,7 @@ int fs::iAlloc() {
 int fs::bAlloc() {
     int top; //栈顶指针
     if (super_block->free_block_num == 0) {
-        cout << "WARNING: no free blocks can be alloc" << endl;
+        printf("WARNING: no free blocks can be alloc\n");
         return -1;
     }
     else{
@@ -419,7 +419,7 @@ int fs::bAlloc() {
  */
 int fs::create(int parent_inode_addr, const char *name, char *file_content) {
     if (strlen(name) >= MAX_FILE_NAME) {
-        cout << "Exceeded max file name length" << endl;
+        printf("Exceeded max file name length\n");
         return -1;
     }
     Dir dir[Dir_ITEM_NUM_PER_BLOCK];
@@ -444,18 +444,18 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
         //输出该磁盘块中的所有目录项
         for(int j = 0; j < Dir_ITEM_NUM_PER_BLOCK; j++) {
 
-            if ( find_pos_i == -1 && strcmp(dir[j].file_name, "") == 0 ) {
+            if (find_pos_i == -1 && strcmp(dir[j].file_name, "") == 0) {
                 //找到一个空闲记录，将新文件创建到这个位置
                 find_pos_i = i / Dir_ITEM_NUM_PER_BLOCK;
                 find_pos_j = j;
             }
-            else if (strcmp(dir[j].file_name, name) == 0 ) {
+            else if (strcmp(dir[j].file_name, name) == 0) {
                 //重名，取出inode，判断是否是文件
                 inode tmp{};
                 fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
                 fread(&tmp, sizeof(inode), 1, img.file_read);
-                if ( ((tmp.mode>>9) &1) == 0 ) {	//是文件且重名，不能创建文件
-                    cout << "File already existed" << endl;
+                if (((tmp.mode>>9) &1) == 0) {	//是文件且重名，不能创建文件
+                    printf("File already existed\n");
                     file_content[0] = '\0';
                     return 1;
                 }
@@ -474,7 +474,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
         strcpy(dir[find_pos_j].file_name, name);
         int cur_inode_addr = iAlloc();
         if (cur_inode_addr == -1) {
-            cout << "ERROR: alloc inode failed" << endl;
+            printf("ERROR: alloc inode failed\n");
             return 2;
         }
         dir[find_pos_j].inodeAddr = cur_inode_addr;
@@ -494,7 +494,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
         for(k = 0; k < file_size; k += super_block->block_size) {
             int cur_block_Addr = bAlloc();
             if (cur_block_Addr == -1) {
-                cout << "ERROR: alloc block failed" << endl;
+                printf("ERROR: alloc block failed\n");
                 return 3;
             }
             p.block_id0[k / super_block->block_size] = cur_block_Addr;
@@ -512,7 +512,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
         if (file_size == 0) {	//长度为0的话也分给它一个block
             int cur_block_Addr = bAlloc();
             if (cur_block_Addr == -1) {
-                cout << "ERROR: alloc block failed" << endl;
+                printf("ERROR: alloc block failed\n");
                 return 3;
             }
             p.block_id0[k / super_block->block_size] = cur_block_Addr;
@@ -551,7 +551,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
 void fs::chmod(int parent_inode_addr, const char *name, int mode) {
 
     if (strcmp(name,".") == 0 || strcmp(name,"..") == 0) {
-        cout << "usage: chmod [filename] [permissions] : Change the file permissions" << endl;
+        printf("usage: chmod [filename] [permissions] : Change the file permissions\n");
         return ;
     }
 
@@ -573,7 +573,7 @@ void fs::chmod(int parent_inode_addr, const char *name, int mode) {
 
         //输出该磁盘块中的所有目录项
         for(j = 0; j < Dir_ITEM_NUM_PER_BLOCK; j++) {
-            if ( strcmp(dir[j].file_name, name) == 0 ) {	//找到该目录或者文件
+            if (strcmp(dir[j].file_name, name) == 0) {	//找到该目录或者文件
                 //取出对应的inode
                 fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
                 fread(&res, sizeof(inode),1,img.file_read);
@@ -586,11 +586,11 @@ void fs::chmod(int parent_inode_addr, const char *name, int mode) {
         i++;
     }
     if (i >= BLOCK_NUM_PER_INODE) {
-        cout << "File name don't exist" << endl;
+        printf("File name don't exist\n");
         return ;
     }
     if (strcmp(cur_user_name, res.user_name) != 0 && strcmp(cur_user_name, "root") != 0) {   //切换不成功（对应用户与当前目录不匹配且当前不是root用户）
-        cout << "" << endl;
+        printf("");
         return ;
     }
 
@@ -621,7 +621,7 @@ void fs::ls(int parent_inode_addr) {
 
     //判断文件模式。
     if (!isPermitRead(cur)) {
-        cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+        printf("WARNING: Permission denied(NO READ AUTHORITY)\n");
         return ;
     }
 
@@ -646,42 +646,41 @@ void fs::ls(int parent_inode_addr) {
             fread(&tmp, sizeof(inode),1,img.file_read);
             fflush(img.file_read);
 
-            if ( strcmp(dir[j].file_name, "") == 0 ) {
+            if (strcmp(dir[j].file_name, "") == 0) {
                 continue;
             }
 
-            if (i > 2 && (strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") ==  0) ) {
+            if (i > 2 && (strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") ==  0)) {
                 continue;
             }
 
             //输出信息
-            if ( ( (tmp.mode>>9) & 1 ) == 1 ) {
-                cout << "d";
+            if (((tmp.mode>>9) & 1) == 1) {
+                printf("d");
             }
             else{
-                cout << "-";
+                printf("-");
             }
 
 
             int permiss_index = 8;
             while(permiss_index >= 0) {
-                if ( ((tmp.mode >> permiss_index) & 1) == 1) {
-                    if (permiss_index % 3 == 2)	cout << "r";
-                    if (permiss_index % 3 == 1)	cout << "w";
-                    if (permiss_index % 3 == 0)	cout << "x";
+                if (((tmp.mode >> permiss_index) & 1) == 1) {
+                    if (permiss_index % 3 == 2)	printf("r");
+                    if (permiss_index % 3 == 1)	printf("w");
+                    if (permiss_index % 3 == 0)	printf("x");
                 }
                 else{
-                    cout << "-";
+                    printf("-");
                 }
                 permiss_index--;
             }
-            cout << "\t";
-            cout << tmp.link_num << "\t";	//该文件链接
-            cout << tmp.user_name << "\t";	//文件所属用户名
-            cout << tmp.group_name << "\t";	//文件所属用户名
-            cout << tmp.size << " B\t";	//文件大小
-            cout << dir[j].file_name;	//文件名
-            cout << endl;
+            printf("\t");
+            printf("%d\t", tmp.link_num);	//该文件链接
+            printf("%s\t", tmp.user_name);	//文件所属用户名
+            printf("%s\t", tmp.group_name);	//文件所属用户名
+            printf("%d B\t",tmp.size);	//文件大小
+            printf("%s\n", dir[j].file_name);	//文件名
             i++;
         }
 
@@ -706,7 +705,7 @@ bool fs::isPermitRead(inode &cur) {
     else
         file_mode = 0;
 
-    if ( ((cur.mode >> file_mode >> 2) & 1) == 0) {
+    if (((cur.mode >> file_mode >> 2) & 1) == 0) {
         return false;
     } else {
         return true;
@@ -731,7 +730,7 @@ bool fs::isPermitWrite(inode &cur) {
     else
         filemode = 0;
 
-    if(((cur.mode >> filemode >> 1) & 1 ) == 0 ) {
+    if (((cur.mode >> filemode >> 1) & 1) == 0) {
         return false;
     }
     return true;
@@ -746,14 +745,14 @@ bool fs::isPermitWrite(inode &cur) {
  */
 int fs::freeInode(int parent_inode_addr) {
     int addr = INODE_TABLE_START_ADDR;
-    if ( (parent_inode_addr - addr) % super_block->inode_size != 0) {   //是否为inode节点起始位置
-        cout << "ERROR: invalid inode addr" << endl;
+    if ((parent_inode_addr - addr) % super_block->inode_size != 0) {   //是否为inode节点起始位置
+        printf("ERROR: invalid inode addr\n");
         return -1;
     }
 
     auto inode_id = static_cast<int>((parent_inode_addr - addr) / super_block->inode_size);
-    if (!bit_map->inode_bitmap[inode_id] ) {  //inode未使用
-        cout << "WARNING: unused inode " << inode_id  << endl;
+    if (!bit_map->inode_bitmap[inode_id]) {  //inode未使用
+        printf("WARNING: unused inode %d\n", inode_id);
         return 1;
     }
 
@@ -786,19 +785,19 @@ int fs::freeInode(int parent_inode_addr) {
  * 没有可供释放的Block  return 2
  */
 int fs::freeBlock(int parent_inode_addr) {
-    if ( (parent_inode_addr - DATA_BLOCK_START_ADDR) % super_block->block_size != 0 ) {
-        cout << "ERROR: invalid block addr" << endl;
+    if ((parent_inode_addr - DATA_BLOCK_START_ADDR) % super_block->block_size != 0) {
+        printf("ERROR: invalid block addr\n");
         return -1;
     }
     unsigned int block_id = static_cast<unsigned int>((parent_inode_addr - DATA_BLOCK_START_ADDR) / super_block->block_size);	//inode节点号
     //该地址还未使用，不能释放空间
     if (!bit_map->block_bitmap[block_id]) {
-        cout << "WARNING: unused block" << endl;
+        printf("WARNING: unused block\n");
         return 1;
     }
 
     if (super_block->free_block_num == super_block->block_num) {
-        cout << "WARNING: full free blocks" << endl;
+        printf("WARNING: full free blocks\n");
         return 2;
     }
     else {
@@ -849,7 +848,7 @@ void fs::touch(int parent_inode_addr,char name[],char buf[]) {
     fread(&cur, sizeof(inode), 1, img.file_read);
 
     if (!isPermitRead(cur)) {
-        cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+        printf("WARNING: Permission denied(NO READ AUTHORITY)\n");
     }
 
     int i = 0;
@@ -865,12 +864,12 @@ void fs::touch(int parent_inode_addr,char name[],char buf[]) {
 
         for(auto & j : dir) {
             //当前是否有重名
-            if (strcmp(j.file_name, name) ==0 ) {
+            if (strcmp(j.file_name, name) ==0) {
                 inode  tmp{};
                 fseek(img.file_read, j.inodeAddr, SEEK_SET);
                 fread(&tmp, sizeof(inode), 1, img.file_read);
-                if ( ((tmp.mode >> 9) & 1) == 0) {
-                    cout << "File already existed" << endl;
+                if (((tmp.mode >> 9) & 1) == 0) {
+                    printf("File already existed\n");
                     return ;
                 }
             }
@@ -885,7 +884,7 @@ void fs::touch(int parent_inode_addr,char name[],char buf[]) {
         create(parent_inode_addr, name, buf);	//创建文件
     }
     else{
-        cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
+        printf("WARNING: Permission denied(NO WRITE AUTHORITY)\n");
         return ;
     }
 }
@@ -947,7 +946,7 @@ void fs::rmrf(int parent_inode_addr) {
  */
 int fs::rm(int parent_inode_addr, char name[]) {
     if (strlen(name) >= MAX_FILE_NAME) {
-        cout << "Exceeded max file name length" << endl;
+        printf("Exceeded max file name length\n");
         return -1;
     }
     inode cur{};
@@ -957,7 +956,7 @@ int fs::rm(int parent_inode_addr, char name[]) {
     int cnt = cur.link_num;
 
     if (!isPermitWrite(cur)) {
-        cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
+        printf("WARNING: Permission denied(NO WRITE AUTHORITY)\n");
         return 1;
     }
 
@@ -979,8 +978,8 @@ int fs::rm(int parent_inode_addr, char name[]) {
             //取出该目录项的inode，判断该目录项是目录还是文件
             fseek(img.file_read, j.inodeAddr, SEEK_SET);
             fread(&tmp, sizeof(inode),1,img.file_read);
-            if ( strcmp(j.file_name, name) == 0) {
-                if(((tmp.mode >> 9) & 1 ) == 1) {/*目录*/}
+            if (strcmp(j.file_name, name) == 0) {
+                if (((tmp.mode >> 9) & 1) == 1) {/*目录*/}
                 else {
                     for(int k : tmp.block_id0)
                         if (k != -1)
@@ -1006,7 +1005,7 @@ int fs::rm(int parent_inode_addr, char name[]) {
         }
 
     }
-    cout << name << ": No such file" << endl;
+    printf( "%s: No such file\n", name);
     return 2;
 }
 
@@ -1021,11 +1020,11 @@ int fs::rm(int parent_inode_addr, char name[]) {
  */
 int fs::rmdir(int parent_inode_addr, char name[]) {
     if (strlen(name) >= MAX_FILE_NAME) {
-        cout << "Exceeded max file name length" << endl;
+        printf("Exceeded max file name length\n");
         return -1;
     }
     if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
-        cout << "WARNING: only subDir can be deleted" << endl;
+        printf("WARNING: only subDir can be deleted\n");
         return 1;
     }
 
@@ -1036,7 +1035,7 @@ int fs::rmdir(int parent_inode_addr, char name[]) {
 
     //判断有无权限
     if (!isPermitWrite(cur)) {
-        cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
+        printf("WARNING: Permission denied(NO WRITE AUTHORITY)\n");
         return 2;
     }
     //依次取出磁盘块
@@ -1060,8 +1059,8 @@ int fs::rmdir(int parent_inode_addr, char name[]) {
             fseek(img.file_read, j.inodeAddr, SEEK_SET);
             fread(&tmp, sizeof(inode), 1, img.file_read);
 
-            if ( strcmp(j.file_name, name) == 0) {
-                if ( ( (tmp.mode >> 9) & 1 ) == 1 ) {
+            if (strcmp(j.file_name, name) == 0) {
+                if (((tmp.mode >> 9) & 1) == 1) {
                     //目录
                     rmrf(j.inodeAddr);
                     strcpy(j.file_name, "");
@@ -1107,7 +1106,7 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1, "cd") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
-            cout << "\n\tcd: missing operand" << endl << "\tTry 'cd [fileName]'\n" << endl;
+            printf("\n\tcd: missing operand\n\t Try 'cd [fileName]'\n");
             return;
         }
         cd(cur_dir_addr, argv2);
@@ -1118,7 +1117,7 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1,"mkdir") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
-            cout << "\n\tmkdir: missing operand" << endl << "\tTry 'mkdir [dirName]'\n" << endl;
+            printf("\n\tmkdir: missing operand\n\tTry 'mkdir [dirName]'\n");
             return;
         }
         mkdir(cur_dir_addr, argv2);
@@ -1127,7 +1126,7 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1, "rmdir") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
-            cout << "\n\trmdir: missing operand" << endl << "\tTry 'rmdir [dirName]'\n" << endl;
+            printf("\n\trmdir: missing operand\n\tTry 'rmdir [dirName]'\n");
             return;
         }
         rmdir(cur_dir_addr, argv2);
@@ -1135,7 +1134,7 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1, "stat") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
-            cout << "\n\tstat: missing operand" << endl << "\tTry 'stat [fileName]'\n" << endl;
+            printf("\n\tstat: missing operand\n\tTry 'stat [fileName]'\n");
             return;
         }
         stat(cur_dir_addr, argv2);
@@ -1143,7 +1142,7 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1, "vi") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
-            cout << "\n\tvi: missing operand" << endl << "\tTry 'vi [fileName]'\n" << endl;
+            printf("\n\tvi: missing operand\n\tTry 'vi [fileName]'\n");
             return;
         }
         fakeVi(cur_dir_addr, argv2, buffer);
@@ -1151,15 +1150,33 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1, "rename") == 0) {
         sscanf(cmd, "%s%s%s", argv1, argv2, argv3);
         if (strcmp(argv2, "") == 0 || strcmp(argv3, "") == 0) {
-            cout << "\n\ttouch: missing operand" << endl << "\tTry 'touch [fileName | dirName]'\n" << endl;
+            printf("\n\ttouch: missing operand\n\tTry 'touch [fileName | dirName]'\n");
             return;
         }
         rename(cur_dir_addr, argv2, argv3);	//读取内容到buf
     }
+    else if (strcmp(argv1, "useradd") == 0) {
+        argv2[0] = '\0';
+        sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            printf("\n\tuseradd: missing operand\n\tTry 'useradd 'user'\n");
+            return;
+        }
+            useradd(argv2);
+    }
+    else if (strcmp(argv1, "userdel") == 0) {
+        argv2[0] = '\0';
+        sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            printf("\n\tuserdel: missing operand\n\tTry 'userdel 'user'\n");
+            return;
+        }
+        userdel(argv2);
+    }
     else if (strcmp(argv1, "touch") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
-            cout << "\n\ttouch: missing operand" << endl << "\tTry 'touch [fileName]'\n" << endl;
+            printf("\n\ttouch: missing operand\n\tTry 'touch [fileName]'\n");
             return;
         }
         touch(cur_dir_addr, argv2, buffer);	//读取内容到buf
@@ -1167,7 +1184,7 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1, "cat") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
-            cout << "\n\tcat: missing operand" << endl << "\tTry 'cat [fileName]'\n" << endl;
+            printf("\n\tcat: missing operand\n\tTry 'cat [fileName]'\n");
             return;
         }
         cat(cur_dir_addr, argv2);
@@ -1175,11 +1192,11 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1, "rm") == 0) {	//删除一个文件
         sscanf(cmd, "%s%s" , argv1, argv2);
         if (strcmp(argv2, "") == 0) {
-            cout << "\n\trm: missing operand" << endl << "\tTry 'rm [fileName]'\n" << endl;
+            printf("\n\trm: missing operand\n\tTry 'rm [fileName]'\n");
             return;
         }
         rm(cur_dir_addr, argv2);
-        cout << endl;
+        printf("\n");
     }
     else if (strcmp(argv1, "help") == 0 || strcmp(argv1, "h") == 0) {
         help();
@@ -1192,7 +1209,7 @@ void fs::commandLine(char *cmd) {
         argv3[0] = '\0';
         sscanf(cmd, "%s%s%s", argv1, argv2, argv3);
         if (strlen(argv2) == 0 || strlen(argv3) == 0) {
-            cout << "usage: chmod [filename] [permissions] : Change the file permissions" << endl;
+            printf("usage: chmod [filename] [permissions] : Change the file permissions\n");
         }
         else{
             int num = 0;
@@ -1201,52 +1218,50 @@ void fs::commandLine(char *cmd) {
             }
             chmod(cur_dir_addr, argv2, num);
         }
+    } else {
+        printf("invalid command: %s\n", cmd);
     }
-    else {
-        cout << "invalid command: " << cmd << endl;
-    }
-    return ;
 }
 
 void fs::commandLinePrompt() {
     if (strcmp(cur_user_name, "root") == 0) {
-        cout << "[root@Mimic ~]# ";
+        printf("[root@Mimic ~]# ");
     } else {
-        cout << "[" << cur_user_name << "@Mimic ~]$ ";
+        printf("[%s@Mimic ~]$ ", cur_user_name);
     }
 }
 
 void fs::fsInfo() {
-    cout << "Commands are defined internally, type 'help' for details"<< endl << endl;
-    cout << "Welcome to ext2mimic 11.45.14 "<< endl << endl;
-    cout << " * Documentation: no doc"<< endl;
-    cout << " * Management: no management"<< endl;
-    cout << " * Support: no info"<< endl << endl;
+    printf("Commands are defined internally, type 'help' for details\n\n");
+    printf("Welcome to ext2mimic 11.45.14\n");
+    printf(" * Documentation: no doc\n");
+    printf(" * Management: no management\n");
+    printf(" * Support: no info\n\n");
     time_t curTime = time(nullptr);
     cout << "System information as of " << ctime(&curTime);
 }
 
 void fs::help() {
-    cout << endl;
-    cout << "rm [fileName] : Remove file" << endl;
-    cout << "mkdir [dirName] : Create dir" << endl;
-    cout << "rmdir [dirName] : Delete dir" << endl;
-    cout << "cd [dirName] : Change current directory" << endl;
-    cout << "ls : List the file and directory" << endl;
-    cout << "chmod [fileName] [permissions] : Change the file permissions" << endl;
-    cout << "touch [fileName] : Create a new empty file" << endl;
-    cout << "stat [fileName | dirName] : Display file or dir detailed information" << endl;
-    cout << "rename [fileName | dirName] [fileName | dirName] : Rename a file or dir" << endl;
-    cout << "vi [fileName] : Edit file with fake Vi" << endl;
-    cout << "pwd : Display current dir" << endl;
-    cout << "exit : Exit the file system" << endl;
-    cout << endl;
+    printf("\n");
+    printf("rm [fileName] : Remove file\n");
+    printf("mkdir [dirName] : Create dir\n");
+    printf("rmdir [dirName] : Delete dir\n");
+    printf("cd [dirName] : Change current directory\n");
+    printf("ls : List the file and directory\n");
+    printf("chmod [fileName] [permissions] : Change the file permissions\n");
+    printf("touch [fileName] : Create a new empty file\n");
+    printf("stat [fileName | dirName] : Display file or dir detailed information\n");
+    printf("rename [fileName | dirName] [fileName | dirName] : Rename a file or dir\n");
+    printf("vi [fileName] : Edit file with fake Vi\n");
+    printf("pwd : Display current dir\n");
+    printf("exit : Exit the file system\n");
+    printf("\n");
 
 }
 
 void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
     if (strlen(name) >= MAX_FILE_NAME) {
-        cout << "Exceeded max file name length" << endl;
+        printf("Exceeded max file name length\n");
         return ;
     }
 
@@ -1280,11 +1295,11 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
         bool flag = false;
         //输出该磁盘块中的所有目录项
         for(j = 0; j < Dir_ITEM_NUM_PER_BLOCK; j++) {
-            if (strcmp(dir[j].file_name,name) == 0 ) {
+            if (strcmp(dir[j].file_name,name) == 0) {
                 //重名，取出inode，判断是否是文件
                 fseek(img.file_read,dir[j].inodeAddr,SEEK_SET);
                 fread(&fileInode,sizeof(inode),1,img.file_read);
-                if ( ((fileInode.mode >> 9 ) & 1) == 0 ) {	//是文件且重名，打开这个文件，并编辑
+                if (((fileInode.mode >> 9) & 1) == 0) {	//是文件且重名，打开这个文件，并编辑
                     flag = true;
                     fileInodeAddr = dir[j].inodeAddr;
                     isExist = true;
@@ -1314,7 +1329,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
         //权限判断。判断文件是否可读
         if (!isPermitRead(fileInode)) {
             //不可读
-            cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+            printf("WARNING: Permission denied(NO READ AUTHORITY)\n");
             return ;
         }
 
@@ -1365,7 +1380,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
         if (isPermitWrite(fileInode)) {	//可写
             writefile(fileInode, fileInodeAddr, buf);
         } else{	//不可写
-            cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
+            printf("WARNING: Permission denied(NO WRITE AUTHORITY)\n");
         }
 
     } else {	//是创建文件模式
@@ -1373,7 +1388,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
             //可写。可以创建文件
             create(parent_inode_addr,name,buf);	//创建文件
         } else {
-            cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
+            printf("WARNING: Permission denied(NO WRITE AUTHORITY)\n");
             return ;
         }
     }
@@ -1388,7 +1403,7 @@ void fs::writefile(inode fileInode, int fileInodeAddr, char *buf) {
             //缺少磁盘块，申请一个
             curblockAddr = bAlloc();
             if (curblockAddr == -1) {
-                cout << "block alloc failed" << endl;
+                printf("block alloc failed\n");
                 return ;
             }
             fileInode.block_id0[k / super_block->block_size] = curblockAddr;
@@ -1414,7 +1429,7 @@ void fs::writefile(inode fileInode, int fileInodeAddr, char *buf) {
  */
 int fs::stat(int parent_inode_addr, char name[]) {
     if (strlen(name) >= MAX_FILE_NAME) {
-        cout << "Exceeded max file name length" << endl;
+        printf("Exceeded max file name length\n");
         return -1;
     }
     inode cur{};
@@ -1424,7 +1439,7 @@ int fs::stat(int parent_inode_addr, char name[]) {
     int cnt = cur.link_num;
 
     if (!isPermitRead(cur)) {
-        cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+        printf("WARNING: Permission denied(NO READ AUTHORITY)\n");
         return 1;
     }
 
@@ -1446,24 +1461,24 @@ int fs::stat(int parent_inode_addr, char name[]) {
             //取出该目录项的inode，判断该目录项是目录还是文件
             fseek(img.file_read, j.inodeAddr, SEEK_SET);
             fread(&tmp, sizeof(inode),1,img.file_read);
-            if ( strcmp(j.file_name, name) == 0) {
+            if (strcmp(j.file_name, name) == 0) {
                 cout << "  File: \"" << j.file_name << "\"" << endl;
                 cout << "Size: " << tmp.size << "\t";
                 cout << "Block: " << 1 << "\t";
                 cout << "IO Block: " << BLOCK_SIZE << "\t";
-                if ( ( (tmp.mode >> 9) & 1 ) == 1 ) {
-                    cout << "directory file" << endl;
+                if (((tmp.mode >> 9) & 1) == 1) {
+                    printf("directory file");
                 }
                 else{
-                    cout << "regular file" << endl;
+                    printf("regular file");
                 }
-                cout << "Device: fd01h/64769d\t";
-                cout << "Inode: " << tmp.inode_id << "\t";
-                cout << "Access: (0";
+                printf("Device: fd01h/64769d\t");
+                printf("Inode: %d\t", tmp.inode_id);
+                printf("Access: (0");
                 int permiss_index = 8, idx = 0, temp = 0;
                 char auth[9];
                 while(permiss_index >= 0) {
-                    if ( ((tmp.mode >> permiss_index) & 1) == 1) {
+                    if (((tmp.mode >> permiss_index) & 1) == 1) {
                         if (permiss_index % 3 == 2)	{
                             temp += 4;
                             auth[idx] = 'r';
@@ -1483,36 +1498,36 @@ int fs::stat(int parent_inode_addr, char name[]) {
                     idx++;
                     permiss_index--;
                     if (idx % 3 == 0) {
-                        cout << temp;
+                        printf("%d", temp);
                         temp = 0;
                     }
                 }
-                cout << "/";
-                if ( ( (tmp.mode >> 9) & 1 ) == 1 ) {
-                    cout << "d";
+                printf("/");
+                if (((tmp.mode >> 9) & 1) == 1) {
+                    printf("d");
                 }
                 else{
-                    cout << "-";
+                    printf("-");
                 }
                 //<< tmp.mode << "/"
-                cout << auth << ")\t";
-                cout << "User: "<< tmp.user_name << "\t";
-                cout << "Group: "<< tmp.group_name << endl;
-                cout << "Access: "<< ctime(&tmp.create_time) << endl;
-                cout << "Modify: "<< ctime(&tmp.last_modified_time) << endl;
-                cout << "Change: "<< ctime(&tmp.last_read_time) << endl;
+               cout << auth << ")\t";
+               cout << "User: "<< tmp.user_name << "\t";
+                cout << "Group: "<< tmp.group_name;
+                cout << "Access: "<< ctime(&tmp.create_time);
+                cout << "Modify: "<< ctime(&tmp.last_modified_time);
+                cout << "Change: "<< ctime(&tmp.last_read_time);
                 return 0;
             }
             i++;
         }
     }
-    cout << name << ": No such file" << endl;
+    cout << name << ": No such file\n";
     return 2;
 }
 
 int fs::rename(int parent_inode_addr, char *ori_name, char *modify_name) {
     if (strlen(modify_name) >= MAX_FILE_NAME) {
-        cout << "Exceeded max file name length" << endl;
+        printf("Exceeded max file name length\n");
         return -1;
     }
     inode cur{};
@@ -1522,7 +1537,7 @@ int fs::rename(int parent_inode_addr, char *ori_name, char *modify_name) {
     int cnt = cur.link_num;
 
     if (!isPermitWrite(cur)) {
-        cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
+        printf("WARNING: Permission denied(NO WRITE AUTHORITY)\n");
         return 1;
     }
 
@@ -1544,7 +1559,7 @@ int fs::rename(int parent_inode_addr, char *ori_name, char *modify_name) {
             //取出该目录项的inode，判断该目录项是目录还是文件
             fseek(img.file_read, j.inodeAddr, SEEK_SET);
             fread(&tmp, sizeof(inode),1,img.file_read);
-            if ( strcmp(j.file_name, ori_name) == 0) {
+            if (strcmp(j.file_name, ori_name) == 0) {
                 strcpy(j.file_name, modify_name);
                 fseek(img.file_write, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
                 fwrite(&dir, sizeof(dir), 1, img.file_write);
@@ -1557,12 +1572,12 @@ int fs::rename(int parent_inode_addr, char *ori_name, char *modify_name) {
         }
 
     }
-    cout << ori_name << ": No such file" << endl;
+    printf("%s: No such file\n",ori_name);
     return 2;
 }
 
 inline void fs::pwd() {
-    cout << cur_dir_name << endl;
+    printf(cur_dir_name);
 }
 
 void fs::cat(int parent_inode_addr, char *name) {
@@ -1597,13 +1612,13 @@ void fs::cat(int parent_inode_addr, char *name) {
             }
             i++;
         }
-        if(flag)
+        if (flag)
             break;
     }
     int cnt = 0;
     if (isExist) {	//文件存在，输出内容
         if (!isPermitRead(file_inode)) {
-            cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+            printf("WARNING: Permission denied(NO READ AUTHORITY)\n");
             return;
         }
 
@@ -1634,6 +1649,524 @@ void fs::cat(int parent_inode_addr, char *name) {
         }
     }
     else {
-        cout <<"cat '"<< name << "': No such a file" << endl;
+        cout <<"cat '"<< name << "': No such a file\n";
+    }
+}
+
+void fs::useradd(char user_name[]) {
+    if (strcmp(cur_user_name, "root") != 0) {
+        printf("Warning: Only root user can add user\n");
+        return ;
+    }
+    printf("password: ");
+    //用户密码
+    char password[100] = {0};
+    fflush(stdin);
+    cin.getline(password, 100);
+
+    printf("refirm password: ");
+    //确认密码
+    char refirm_password[100] = {0};
+    fflush(stdin);
+    cin.getline(refirm_password, 100);
+    if (strcmp(password, refirm_password) != 0) {
+        printf("different passwords ! Register failed\n");
+        return;
+    }
+    Dir dir[16];
+    int user_inode_Addr = -1;	//用户文件inode地址
+    int passwd_inode_Addr = -1;	//用户密码文件inode地址
+    int group_inode_Addr = -1;	//用户组文件inode地址
+    inode user_inode{};		//用户文件的inode
+    inode passwd_inode{};		//用户密码文件的inode
+    inode group_inode{};		//用户组文件inode
+
+    //原来的目录
+    char tmp_cur_user_name[100];
+    char tmp_cur_user_name_next[100];
+    char tmp_cur_user_dir_name[100];
+    int  tmp_cur_dir_addr;
+    char tmp_cur_dir_name[100];
+    char tmp_cur_group_name[100];
+
+    inode cur_dir_inode{};	//当前目录的inode
+    int i,j;
+    strcpy(tmp_cur_user_name, cur_user_name);
+    strcpy(tmp_cur_user_dir_name, cur_user_dir_name);
+    tmp_cur_dir_addr = cur_dir_addr;
+    strcpy(tmp_cur_dir_name, cur_dir_name);
+    //返回根目录
+    memset(cur_user_name, 0, sizeof(cur_user_name));
+    memset(cur_user_dir_name, 0, sizeof(cur_user_dir_name));
+    cur_dir_addr = ROOT_DIR_ADDR;
+    strcpy(cur_dir_name, "/");
+
+    cd(cur_dir_addr, "home");
+
+    strcpy(tmp_cur_user_name_next , cur_user_name);
+    strcpy(tmp_cur_group_name, cur_group_name);
+
+    strcpy(cur_user_name, user_name);
+    strcpy(cur_group_name, "user");
+
+    if (mkdir(cur_dir_addr, user_name)) {
+
+        strcpy(cur_user_name, tmp_cur_user_name);
+        strcpy(cur_group_name, tmp_cur_group_name);
+        strcpy(cur_user_dir_name, tmp_cur_user_dir_name);
+        cur_dir_addr = tmp_cur_dir_addr;
+        strcpy(cur_dir_name, tmp_cur_dir_name);
+        printf("Error: Register failed\n");
+        return ;
+    }
+
+    chmod(cur_dir_addr, user_name, 0600);
+    strcpy(cur_user_name, tmp_cur_user_name_next);
+    strcpy(cur_group_name, tmp_cur_group_name);
+
+    memset(cur_user_name, 0, sizeof(cur_user_name));
+    memset(cur_user_dir_name, 0, sizeof(cur_user_dir_name));
+    cur_dir_addr = ROOT_DIR_ADDR;
+    strcpy(cur_dir_name, "/");
+
+    cd(cur_dir_addr, "etc");
+
+    fseek(img.file_read, cur_dir_addr, SEEK_SET);
+    fread(&cur_dir_inode, sizeof(inode), 1, img.file_read);
+
+
+    for(int i : cur_dir_inode.block_id0) {
+        if (i == -1) {
+            continue;
+        }
+        fseek(img.file_read, i, SEEK_SET);
+        fread(&dir, sizeof(dir), 1, img.file_read);
+
+        //一个j里面存储16个文件夹
+        for(auto & j : dir) {
+            if (strcmp(j.file_name,"user")==0 || strcmp(j.file_name, "passwd")==0 || strcmp(j.file_name, "group") == 0) {
+                inode tmp{};
+
+                fseek(img.file_read, j.inodeAddr, SEEK_SET);
+                fread(&tmp, sizeof(inode),1,img.file_read);
+
+                if (((tmp.mode >> 9) & 1) == 0) {
+
+                    if (strcmp(j.file_name, "user") == 0) {
+                        user_inode_Addr = j.inodeAddr;
+                        user_inode = tmp;
+                    }
+                    else if (strcmp(j.file_name, "passwd") == 0) {
+                        passwd_inode_Addr = j.inodeAddr;
+                        passwd_inode = tmp;
+                    }
+                    else if (strcmp(j.file_name, "group")==0) {
+                        group_inode_Addr = j.inodeAddr;
+                        group_inode = tmp;
+                    }
+                }
+            }
+        }
+        if (user_inode_Addr != -1 && passwd_inode_Addr != -1)
+            break;
+    }
+
+    char file_content[100000];
+    char buffer[600];
+
+    int cnt = 0;
+    for(int i = 0; i < user_inode.size; i++) {
+        if (i % super_block->block_size == 0) {
+            //换新的磁盘块
+            fseek(img.file_read, user_inode.block_id0[i / super_block->block_size], SEEK_SET);
+            fread(&buffer, super_block->block_size, 1, img.file_read);
+            cnt = 0;
+        }
+        file_content[i] = buffer[cnt++];
+    }
+    buffer[user_inode.size] = '\0';
+
+
+
+    if (strstr(buffer, user_name) !=  nullptr) {
+        printf("Warning: User already existed\n");
+        strcpy(cur_user_name, tmp_cur_user_name);
+        strcpy(cur_user_dir_name, tmp_cur_user_dir_name);
+        cur_dir_addr = tmp_cur_dir_addr;
+        strcpy(cur_dir_name, tmp_cur_dir_name);
+        return ;
+    }
+
+    // 1 -> 普通用户组 buffer + strlen(buffer) -> 定位到末尾
+    sprintf(buffer + strlen(buffer), "%s:x:%d:%d\n", user_name, nextUID++, 1);
+    user_inode.size = strlen(buffer);
+    writefile(user_inode, user_inode_Addr, buffer);
+
+
+    cnt = 0;
+    for(int i = 0;i < passwd_inode.size;i++) {
+        if (i % super_block->block_size == 0) {	//超出了这个磁盘块
+            //换新的磁盘块
+            fseek(img.file_read, passwd_inode.block_id0[i / super_block->block_size], SEEK_SET);
+            fread(&buffer, super_block->block_size, 1, img.file_read);
+            cnt = 0;
+        }
+        file_content[i] = buffer[cnt++];
+    }
+    buffer[passwd_inode.size] = '\0';
+
+    sprintf(buffer + strlen(buffer),"%s:%s\n", user_name, password);
+    passwd_inode.size = strlen(buffer);
+    writefile(passwd_inode, passwd_inode_Addr, buffer);
+
+
+    //取出group文件内容
+    cnt = 0;
+    for(int i = 0; i < group_inode.size; i++) {
+        if (i % super_block->block_size == 0) {	//超出了这个磁盘块
+            //换新的磁盘块
+            fseek(img.file_read, group_inode.block_id0[i / super_block->block_size], SEEK_SET);
+            fread(&buffer, super_block->block_size, 1, img.file_read);
+            cnt = 0;
+        }
+        file_content[i] = buffer[cnt++];
+    }
+    buffer[group_inode.size] = '\0';
+
+
+    if (buffer[strlen(buffer) - 2] == ':')  {                    //当前组内无用户
+        sprintf(buffer+strlen(buffer)-1, "%s\n", user_name);
+    }
+    else {
+        sprintf(buffer+strlen(buffer)-1, ",%s\n", user_name);
+    }
+    group_inode.size = strlen(buffer);
+    writefile(group_inode, group_inode_Addr, buffer);
+
+    //恢复现场，回到原来的目录
+    strcpy(cur_user_name, tmp_cur_user_name);
+    strcpy(cur_user_dir_name, tmp_cur_user_dir_name);
+    cur_dir_addr = tmp_cur_dir_addr;
+    strcpy(cur_dir_name, tmp_cur_dir_name);
+    printf("Register success\n");
+}
+
+void fs::userdel(char *user_name) {
+    if (strcmp(user_name, "root") == 0) {
+        printf("Warning: root can't be deleted\n");
+    }
+
+    if (strcmp(cur_user_name, "root") != 0) {
+        printf("Warning: Only root user dan delete user\n");
+        return ;
+    }
+
+    Dir dir[16];
+    int user_inode_Addr = -1;	//用户文件inode地址
+    int passwd_inode_Addr = -1;	//用户密码文件inode地址
+    int group_inode_Addr = -1;	//用户组文件inode地址
+    inode user_inode{};		//用户文件的inode
+    inode passwd_inode{};		//用户密码文件的inode
+    inode group_inode{};		//用户组文件inode
+
+    //原目录
+    char tmp_cur_user_name[100];
+    char tmp_cur_user_dir_name[100];
+    int  tmp_cur_dir_addr;
+    char tmp_cur_dir_name[100];
+    inode cur_dir_inode{};	//当前目录
+    int i, j;
+
+    strcpy(tmp_cur_user_name, cur_user_name);
+    strcpy(tmp_cur_user_dir_name, cur_user_dir_name);
+    tmp_cur_dir_addr = cur_dir_addr;
+    strcpy(tmp_cur_dir_name, cur_dir_name);
+
+    memset(cur_user_name, 0, sizeof(cur_user_name));
+    memset(cur_user_dir_name, 0, sizeof(cur_user_dir_name));
+    cur_dir_addr = ROOT_DIR_ADDR;
+    strcpy(cur_dir_name, "/");
+
+    //进入用户目录
+    cd(cur_dir_addr, "etc");
+
+    fseek(img.file_read, cur_dir_addr, SEEK_SET);
+    fread(&cur_dir_inode, sizeof(inode), 1, img.file_read);
+
+
+    for(int i = 0;i < 10; i++) {
+        if (cur_dir_inode.block_id0[i] == -1) {
+            continue;
+        }
+        fseek(img.file_read, cur_dir_inode.block_id0[i], SEEK_SET);
+        fread(&dir, sizeof(dir), 1, img.file_read);
+
+        for(int j = 0; j < 16; j++) {
+            if (strcmp(dir[j].file_name, "user") == 0 || strcmp(dir[j].file_name, "passwd") == 0 || strcmp(dir[j].file_name, "group") == 0) {
+                inode tmp{};
+                fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
+                fread(&tmp, sizeof(inode),1,img.file_read);
+
+                //文件名标识别符号判断
+                if (((tmp.mode >> 9) & 1) ==0) {
+                    if (strcmp(dir[j].file_name, "user") == 0) {
+                        user_inode_Addr = dir[j].inodeAddr;
+                        user_inode = tmp;
+                    }
+                    else if (strcmp(dir[j].file_name, "passwd") == 0) {
+                        passwd_inode_Addr = dir[j].inodeAddr;
+                        passwd_inode = tmp;
+                    }
+                    else if (strcmp(dir[j].file_name, "group") == 0) {
+                        group_inode_Addr = dir[j].inodeAddr;
+                        group_inode = tmp;
+                    }
+                }
+            }
+        }
+        if (user_inode_Addr != -1 && passwd_inode_Addr != -1)
+            break;
+    }
+
+    char file_content[100000];
+    char buffer[600];
+    int cnt = 0;
+    for(int i = 0; i < user_inode.size; i++) {
+        if (i % super_block->block_size  == 0) {
+            //换新的磁盘块
+            fseek(img.file_read, user_inode.block_id0[i / super_block->block_size], SEEK_SET);
+            fread(&buffer, super_block->block_size, 1, img.file_read);
+            cnt = 0;
+        }
+        file_content[i] = buffer[cnt++];
+    }
+    buffer[user_inode.size] = '\0';
+
+    if (strstr(buffer, user_name) == nullptr) {
+        printf("Error: User don't exist\n");
+        strcpy(cur_user_name, tmp_cur_user_name);
+        strcpy(cur_user_dir_name, tmp_cur_user_dir_name);
+        cur_dir_addr = tmp_cur_dir_addr;
+        strcpy(cur_dir_name, tmp_cur_dir_name);
+        return ;
+    }
+
+    delUser(buffer, user_name);
+    user_inode.size = strlen(buffer);
+    writefile(user_inode, passwd_inode_Addr, buffer);
+
+    cnt = 0;
+    for(int i = 0;i < passwd_inode.size;i++) {
+        if (i% super_block->block_size == 0) {
+            fseek(img.file_read, passwd_inode.block_id0[i / super_block->block_size], SEEK_SET);
+            fread(&buffer, super_block->block_size , 1, img.file_read);
+            cnt = 0;
+        }
+        file_content[i] = buffer[cnt++];
+    }
+    buffer[passwd_inode.size] = '\0';
+    delUser(buffer, user_name);
+    passwd_inode.size = strlen(buffer);
+    writefile(passwd_inode, passwd_inode_Addr, buffer);
+
+    //取出group文件内容
+    cnt = 0;
+    for(int i = 0; i < group_inode.size; i++) {
+        if (i % super_block->block_size == 0) {	//超出了这个磁盘块
+            //换新的磁盘块
+            fseek(img.file_read, group_inode.block_id0[i/super_block->block_size ], SEEK_SET);
+            fread(&buffer, super_block->block_size , 1, img.file_read);
+            cnt = 0;
+        }
+        file_content[i] = buffer[cnt++];
+    }
+    buffer[group_inode.size] = '\0';
+    delUser(buffer, user_name);
+    group_inode.size = strlen(buffer);
+    writefile(group_inode, group_inode_Addr, buffer);
+
+
+    char c, user_to_delete[110] = { 0 }, cmp_Cur_Dir_Name[311];
+    strcpy(user_to_delete, "/home/");
+    strcat(user_to_delete, user_name);
+    strcat(user_to_delete, "/");
+
+    strcpy(cmp_Cur_Dir_Name, tmp_cur_dir_name);
+    strcat(cmp_Cur_Dir_Name, "/");
+
+    for (i = 0, j = 0; j < 3; i++) {
+        c = cmp_Cur_Dir_Name[i];
+        if (c != user_to_delete[i])
+            break;
+        else if (c == '/')
+            j++;
+    }
+
+    if (j != 3) {
+        //恢复现场，回到原来的目录
+        strcpy(cur_user_name,  "root");
+        strcpy(cur_user_dir_name, "root");
+        cur_dir_addr = ROOT_DIR_ADDR;
+        strcpy(cur_dir_name, "/");
+        cd(cur_dir_addr, "home");
+        rmdir(cur_dir_addr, user_name);
+
+        strcpy(cur_user_name, tmp_cur_user_name);
+        strcpy(cur_user_dir_name, tmp_cur_user_dir_name);
+        cur_dir_addr = tmp_cur_dir_addr;
+        strcpy(cur_dir_name, tmp_cur_dir_name);
+    } else {
+        // 在root用户进入a用户目录，删掉a用户，则回到根目录
+        strcpy(cur_user_name,  "root");
+        strcpy(cur_user_dir_name, "root");
+        cur_dir_addr = ROOT_DIR_ADDR;	//当前用户目录地址设为根目录地址
+        strcpy(cur_dir_name, "/");		//当前目录设为"/"
+
+        // 删除username目录
+        cd(cur_dir_addr, "home");
+        rmdir(cur_dir_addr, user_name);
+        // 回到/home/root
+        cd(cur_dir_addr, "..");
+    }
+    printf("Delete user success\n");
+}
+
+void fs::delUser(char *buf, char *user_name) {
+    char* ptr = strstr(buf, user_name);
+    *ptr = '\0';
+    while((*ptr) != '\n') {
+        ptr++;
+    }
+    //ptr + 1 -> 下一个user的开始位置;
+    ptr++;
+    strcat(buf, ptr);
+}
+
+bool fs::login() {
+    char user_name[120] = {0};
+    char passwd[120] = {0};
+    printf("Please login\n");
+    printf("username: ");
+    fflush(stdout);
+    scanf("%s", user_name);
+    printf("password: ");
+    fflush(stdout);
+    scanf("%s", passwd);
+    fflush(stdout);
+    fflush(stdin);
+    if (access(user_name, passwd)) {
+        is_login = true;
+        return true;
+    } else {
+        is_login = false;
+        return false;
+    }
+}
+
+bool fs::access(char *user_name, char *passwd) {
+    int user_inode_addr = -1;
+    int passwd_inode_addr = -1;
+    inode user_inode{};
+    inode passwd_inode{};
+    inode cur_dir_inode{};
+    Dir dir[16];
+    //找到user文件和passwd文件的inode地址
+    cd(cur_dir_addr, "etc");
+    fseek(img.file_read, this->cur_dir_addr, SEEK_SET);
+    fread(&cur_dir_inode, sizeof(inode), 1, img.file_read);
+    for(int i : cur_dir_inode.block_id0) {
+        if (i == -1) {
+            continue;
+        }
+        fseek(img.file_read, i, SEEK_SET);
+        fread(&dir, sizeof(dir), 1, img.file_read);
+        for(auto & j : dir) {
+            if (strcmp(j.file_name, "user") == 0 || strcmp(dir->file_name, "passwd") != 0) {
+                inode tmp{};
+                fseek(img.file_read, j.inodeAddr, SEEK_SET);
+                fread(&tmp, sizeof(inode), 1, img.file_read);
+                if (((tmp.mode >> 9) & 1) == 0) {
+                    //文件
+                    if (strcmp(j.file_name, "user")==0) {
+                        user_inode_addr = j.inodeAddr;
+                        user_inode = tmp;
+                    }
+                    else if (strcmp(j.file_name, "passwd") == 0) {
+                        passwd_inode_addr = j.inodeAddr;
+                        passwd_inode = tmp;
+                    }
+                }
+            }
+        }
+        if (user_inode_addr != -1 && passwd_inode_addr != -1) {
+            break;
+        }
+    }
+
+    char user[100000];
+    char buffer[600];
+    int block_pointer = 0;
+    int i;
+    for(i = 0; i < user_inode.size; i++) {
+        if (i % super_block->block_size == 0) {
+            //需要用新的磁盘块
+            fseek(img.file_read, user_inode.block_id0[i / super_block->block_size], SEEK_SET);
+            fread(buffer, super_block->block_size, 1, img.file_read);
+            block_pointer = 0;
+        }
+        user[i] = buffer[block_pointer++];
+    }
+    user[i] = '\0';
+    if (strstr(user, user_name) == nullptr) {
+        printf("Warning: User doesn't exist\n");
+        cd(cur_dir_addr, "..");
+        return false;
+    }
+
+    block_pointer = 0;
+    for(i = 0; i < passwd_inode.size; i++) {
+        if (i % super_block->block_size == 0) {
+            //需要用新的磁盘块
+            fseek(img.file_read, passwd_inode.block_id0[i / (super_block->block_size)], SEEK_SET);
+            fread(buffer, super_block->block_size, 1, img.file_read);
+            block_pointer = 0;
+        }
+        user[i] = buffer[block_pointer++];
+    }
+    user[i] = '\0';
+    char *p;
+    if ((p = strstr(user, user_name)) == nullptr) {
+        printf("User doesn't exist in passwd file\n");
+        cd(cur_dir_addr, "..");
+        return false;
+    }
+
+    while ((*p) != ':') {
+        p++;
+    }
+    p++;
+    block_pointer = 0;
+    while((*p) != '\n') {
+        buffer[block_pointer++] = *p;
+        p++;
+    }
+    buffer[block_pointer] = '\0';
+    //密码
+    if (strcmp(buffer, passwd) == 0) {	//正确
+        strcpy(cur_user_name, user_name);
+        if (strcmp(user_name, "root") == 0)
+            strcpy(cur_group_name, "root");	//当前登陆用户组名
+        else
+            strcpy(cur_group_name,"user");	//当前登陆用户组名
+        cd(cur_dir_addr, "..");
+        cd(cur_dir_addr, "home");
+        cd(cur_dir_addr, user_name);	//进入到用户目录
+        strcpy(cur_user_dir_name, cur_dir_name);	//复制当前登陆用户目录名
+        return true;
+    }
+    else{
+        printf("Wrong Password !\n");
+        cd(cur_dir_addr, "..");	//回到根目录
+        return false;
     }
 }

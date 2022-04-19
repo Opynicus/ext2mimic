@@ -16,17 +16,17 @@ bool image::initImage() {
     cout << "init image ......" << endl;
     if (!existImage()) {
         cout << "Warning: image file doesn't exist, try to create new one" << endl;
-        file_write = fopen(IMAGE_FILE_NAME, "w");    //新建一个
+        file_write = fopen(IMAGE_FILE_NAME, "wb");    //新建一个
         if (file_write == nullptr) {    //出错
             cout << "Fatal Error: can't create image file" << endl;
             exit(-1);
         }
-        file_read = fopen(IMAGE_FILE_NAME, "r");
+        file_read = fopen(IMAGE_FILE_NAME, "rb");
         cout << "create image !" << endl;
         return false;
     } else {
-        file_read = fopen(IMAGE_FILE_NAME, "r");
-        file_write = fopen(IMAGE_FILE_NAME, "r+");
+        file_read = fopen(IMAGE_FILE_NAME, "rb");
+        file_write = fopen(IMAGE_FILE_NAME, "rb+");
         if (file_write == nullptr) {
             cout << "Error: open image failed" << endl;
             exit(-1);

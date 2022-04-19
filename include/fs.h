@@ -42,6 +42,9 @@ public:
     void fakeVi(int parent_inode_addr,char name[],char buf[]);
     int stat(int parent_inode_addr, char name[]);
     int rename(int parent_inode_addr, char ori_name[], char modify_name[]);
+    void useradd(char user_name[]);
+    void userdel(char user_name[]);
+    bool login();
     inline void pwd();
 protected:
 private:
@@ -58,6 +61,8 @@ private:
     bool isPermitRead(inode &cur);
     bool isPermitWrite(inode &cur);
     void writefile(inode fileInode, int fileInodeAddr, char buf[]);
+    static void delUser(char buf[], char user_name[]);
+    bool access(char user_name[], char passwd[]);
 };
 
 
