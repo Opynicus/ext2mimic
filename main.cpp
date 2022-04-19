@@ -16,12 +16,14 @@ int main(int argc, char** argv) {
         fileSystem.format();
     }
     //cout << "initial completed !" << endl << endl;
+    while(!fileSystem.login()){/*待登录*/};
+    system("cls");
     fs::fsInfo();
-    fileSystem.is_login = true;
     while (fileSystem.is_login) {
         fileSystem.commandLinePrompt();
         char cmd[100];
         cin.getline(cmd, 100);
         fileSystem.commandLine(cmd);
     }
+    return 0;
 }
