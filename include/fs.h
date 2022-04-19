@@ -30,6 +30,7 @@ public:
     int freeBlock(int parent_inode_addr);
     int rmdir(int parent_inode_addr, char name[]);
     void rmrf(int parent_inode_addr);
+    void cat(int parent_inode_addr, char name[]);
     void touch(int parent_inode_addr,char name[],char buf[]);
     int rm(int parent_inode_addr, char name[]);
     void exit();
@@ -41,6 +42,7 @@ public:
     void fakeVi(int parent_inode_addr,char name[],char buf[]);
     int stat(int parent_inode_addr, char name[]);
     int rename(int parent_inode_addr, char ori_name[], char modify_name[]);
+    inline void pwd();
 protected:
 private:
     image& img;

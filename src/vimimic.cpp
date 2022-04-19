@@ -59,12 +59,12 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
             redirectPos(handle_out, cur_x, cur_y);
             mode = 1;
         }
-        else if (c == 224) {	//光标左右移动
+        else if (c == 224 || c == 'h' || c == 'l') {//光标移动
             c = getch();
-            if (c == 75) {
+            if (c == 75 || c == 'h') {
                 moveLeft(buf, cnt);
             }
-            else if (c == 77) {
+            else if (c == 77 || c == 'l') {
                 moveRight(buf, cnt, max_len);
             }
             return true;

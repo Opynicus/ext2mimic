@@ -1112,6 +1112,9 @@ void fs::commandLine(char *cmd) {
         }
         cd(cur_dir_addr, argv2);
     }
+    else if (strcmp(argv1, "pwd") == 0) {
+        pwd();
+    }
     else if (strcmp(argv1,"mkdir") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
         if (strcmp(argv2, "") == 0) {
@@ -1148,7 +1151,7 @@ void fs::commandLine(char *cmd) {
     else if (strcmp(argv1, "rename") == 0) {
         sscanf(cmd, "%s%s%s", argv1, argv2, argv3);
         if (strcmp(argv2, "") == 0 || strcmp(argv3, "") == 0) {
-            cout << "\n\ttouch: missing operand" << endl << "\tTry 'touch [fileName]'\n" << endl;
+            cout << "\n\ttouch: missing operand" << endl << "\tTry 'touch [fileName | dirName]'\n" << endl;
             return;
         }
         rename(cur_dir_addr, argv2, argv3);	//读取内容到buf
@@ -1161,6 +1164,14 @@ void fs::commandLine(char *cmd) {
         }
         touch(cur_dir_addr, argv2, buffer);	//读取内容到buf
     }
+    else if (strcmp(argv1, "cat") == 0) {
+        sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            cout << "\n\tcat: missing operand" << endl << "\tTry 'cat [fileName]'\n" << endl;
+            return;
+        }
+        cat(cur_dir_addr, argv2);
+    }
     else if (strcmp(argv1, "rm") == 0) {	//删除一个文件
         sscanf(cmd, "%s%s" , argv1, argv2);
         if (strcmp(argv2, "") == 0) {
@@ -1168,6 +1179,7 @@ void fs::commandLine(char *cmd) {
             return;
         }
         rm(cur_dir_addr, argv2);
+        cout << endl;
     }
     else if (strcmp(argv1, "help") == 0 || strcmp(argv1, "h") == 0) {
         help();
@@ -1222,10 +1234,12 @@ void fs::help() {
     cout << "cd [dirName] : Change current directory" << endl;
     cout << "ls : List the file and directory" << endl;
     cout << "chmod [fileName] [permissions] : Change the file permissions" << endl;
-    cout << "exit : Exit the file system" << endl;
     cout << "touch [fileName] : Create a new empty file" << endl;
     cout << "stat [fileName | dirName] : Display file or dir detailed information" << endl;
     cout << "rename [fileName | dirName] [fileName | dirName] : Rename a file or dir" << endl;
+    cout << "vi [fileName] : Edit file with fake Vi" << endl;
+    cout << "pwd : Display current dir" << endl;
+    cout << "exit : Exit the file system" << endl;
     cout << endl;
 
 }
@@ -1366,8 +1380,8 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
 }
 
 void fs::writefile(inode fileInode, int fileInodeAddr, char *buf) {
-    int len = strlen(buf);	//文件长度，单位为字节
-    for(int k = 0; k < len; k += super_block->block_size) {	//最多10次，10个磁盘快，即最多5K
+    int read_len = strlen(buf);	//文件长度，单位为字节
+    for(int k = 0; k < read_len; k += super_block->block_size) {	//最多10次，10个磁盘快，即最多5K
         //分配这个inode的磁盘块，从控制台读取内容
         int curblockAddr;
         if (fileInode.block_id0[k / super_block->block_size] == -1) {
@@ -1388,7 +1402,7 @@ void fs::writefile(inode fileInode, int fileInodeAddr, char *buf) {
         fflush(img.file_write);
     }
     //更新该文件大小
-    fileInode.size = len;
+    fileInode.size = read_len;
     fileInode.last_modified_time = time(NULL);
     fseek(img.file_write,fileInodeAddr,SEEK_SET);
     fwrite(&fileInode,sizeof(inode),1,img.file_write);
@@ -1545,4 +1559,81 @@ int fs::rename(int parent_inode_addr, char *ori_name, char *modify_name) {
     }
     cout << ori_name << ": No such file" << endl;
     return 2;
+}
+
+inline void fs::pwd() {
+    cout << cur_dir_name << endl;
+}
+
+void fs::cat(int parent_inode_addr, char *name) {
+    char buf[10000] = {0};
+    Dir dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
+    inode cur = {0};
+    fseek(img.file_read, parent_inode_addr, SEEK_SET);
+    fread(&cur, sizeof(inode), 1, img.file_read);
+
+    int i = 0, j;
+    bool isExist = false;
+    bool flag = false;
+    inode file_inode = {0};
+    while (i < BLOCK_NUM_PER_INODE) {
+        if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
+            i += Dir_ITEM_NUM_PER_BLOCK;
+            continue;
+        }
+        fseek(img.file_read, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+        fread(dir, sizeof(dir), 1, img.file_read);
+        fflush(img.file_read);
+
+        for (j = 0; j < Dir_ITEM_NUM_PER_BLOCK; j++) {
+            if (strcmp(dir[j].file_name, name) == 0) {
+                fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
+                fread(&file_inode, sizeof(inode), 1, img.file_read);
+                if (((file_inode.mode >> 9) & 1) == 0) {	//找到文件
+                    isExist = true;
+                    flag = true;
+                    break;
+                }
+            }
+            i++;
+        }
+        if(flag)
+            break;
+    }
+    int cnt = 0;
+    if (isExist) {	//文件存在，输出内容
+        if (!isPermitRead(file_inode)) {
+            cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+            return;
+        }
+
+        i = 0;
+        int file_len = file_inode.size;	//文件长度
+        int read_len = 0;	//读出来的长度
+        for (i = 0; i < 10; i++) {
+            char fileContent[1000] = { 0 };
+            if (file_inode.block_id0[i] == -1) {
+                continue;
+            }
+            //依次取出磁盘块的内容
+            fseek(img.file_read, file_inode.block_id0[i], SEEK_SET);
+            fread(fileContent, super_block->block_size, 1, img.file_read);
+            fflush(img.file_read);
+            //输出字符串
+            int cur_len = 0;
+            while (cur_len < super_block->block_size) {
+                if (read_len >= file_len)	//全部输出完毕
+                    break;
+                printf("%c", fileContent[cur_len]);	//命令行打印
+                buf[cnt++] = fileContent[cur_len];	//存入buf
+                cur_len++;
+                read_len++;
+            }
+            if (read_len >= file_len)
+                break;
+        }
+    }
+    else {
+        cout <<"cat '"<< name << "': No such a file" << endl;
+    }
 }

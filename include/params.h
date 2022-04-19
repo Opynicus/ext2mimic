@@ -22,7 +22,7 @@ using namespace std;
 #define SUPERBLOCK_SIZE 1024                            //SuperBlock大小（byte）
 #define INODE_SIZE 128                                  //Inode大小（byte）128B
 #define BLOCK_SIZE 512                                 //Block大小（byte), 512B
-#define BLOCK_NUM 10240                                 //块号数为8192,大小为 8192 * 512B
+#define BLOCK_NUM 10240                                 //块号数为10240,大小为 10240 * 512B
 
 #define MAX_FREE_BLOCKS 64                              //空闲块堆栈大小，一个空闲堆栈最多能存多少个磁盘块地址
 
