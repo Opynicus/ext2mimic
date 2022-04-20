@@ -21,18 +21,13 @@ public:
     bool format();
     int mkdir(int parent_inode_addr, char name[]);
     int cd(int parent_inode_addr, const char name[]);
-    int iAlloc();
-    int bAlloc();
-    int create(int parent_inode_addr, const char name[], char file_content[]);
     void chmod(int parent_inode_addr, const char name[], int mode);
     void ls(int parent_inode_addr);
-    int freeInode(int parent_inode_addr);
-    int freeBlock(int parent_inode_addr);
     int rmdir(int parent_inode_addr, char name[]);
     void rmrf(int parent_inode_addr);
+    int rm(int parent_inode_addr, char name[]);
     void cat(int parent_inode_addr, char name[]);
     void touch(int parent_inode_addr,char name[],char buf[]);
-    int rm(int parent_inode_addr, char name[]);
     void exit();
     void commandLine(char cmd[]);
     void commandLinePrompt();
@@ -61,8 +56,13 @@ private:
     bool isPermitRead(inode &cur);
     bool isPermitWrite(inode &cur);
     void writefile(inode fileInode, int fileInodeAddr, char buf[]);
+    int create(int parent_inode_addr, const char name[], char file_content[]);
     static void delUser(char buf[], char user_name[]);
     bool access(char user_name[], char passwd[]);
+    int freeInode(int parent_inode_addr);
+    int freeBlock(int parent_inode_addr);
+    int iAlloc();
+    int bAlloc();
 };
 
 
