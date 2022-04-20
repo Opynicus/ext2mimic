@@ -224,7 +224,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
 
     int i = 0;
     int find_pos_i = -1, find_pos_j = -1;
-    // BLOCK_NUM_PER_INODE -> 10 直接 * Dir_ITEM_NUM_PER_BLOCK = BLOCK_NUM_PER_INODE 个目录项
+    // BLOCK_NUM_PER_INODE -> BLOCK_ID0_NUM 直接 * Dir_ITEM_NUM_PER_BLOCK = BLOCK_NUM_PER_INODE 个目录项
     while(i < BLOCK_NUM_PER_INODE) {
         int dir_in_block = i / Dir_ITEM_NUM_PER_BLOCK;
         if (cur.block_id0[dir_in_block] == -1) {
@@ -1289,7 +1289,6 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
     int fileInodeAddr = -1;	//文件的inode地址
     bool isExist = false;	//文件是否已存在
     while(i < BLOCK_NUM_PER_INODE) {
-        //160个目录项之内，可以直接在直接块里找
         dno = i / Dir_ITEM_NUM_PER_BLOCK;	//在第几个直接块里
 
         if (cur.block_id0[dno] == -1) {
@@ -1640,7 +1639,7 @@ void fs::cat(int parent_inode_addr, char *name) {
         i = 0;
         int file_len = file_inode.size;	//文件长度
         int read_len = 0;	//读出来的长度
-        for (i = 0; i < 10; i++) {
+        for (i = 0; i < BLOCK_ID0_NUM; i++) {
             char fileContent[1000] = { 0 };
             if (file_inode.block_id0[i] == -1) {
                 continue;
@@ -1690,7 +1689,7 @@ void fs::useradd(char user_name[]) {
          cout << "different passwords ! Register failed" << endl;
         return;
     }
-    Dir dir[16];
+    Dir dir[Dir_ITEM_NUM_PER_BLOCK];
     int user_inode_Addr = -1;	//用户文件inode地址
     int passwd_inode_Addr = -1;	//用户密码文件inode地址
     int group_inode_Addr = -1;	//用户组文件inode地址
@@ -1759,7 +1758,6 @@ void fs::useradd(char user_name[]) {
         fseek(img.file_read, i, SEEK_SET);
         fread(&dir, sizeof(dir), 1, img.file_read);
 
-        //一个j里面存储16个文件夹
         for(auto & j : dir) {
             if (strcmp(j.file_name,"user")==0 || strcmp(j.file_name, "passwd")==0 || strcmp(j.file_name, "group") == 0) {
                 inode tmp{};
@@ -1881,7 +1879,7 @@ void fs::userdel(char *user_name) {
         return ;
     }
 
-    Dir dir[16];
+    Dir dir[Dir_ITEM_NUM_PER_BLOCK];
     int user_inode_Addr = -1;	//用户文件inode地址
     int passwd_inode_Addr = -1;	//用户密码文件inode地址
     int group_inode_Addr = -1;	//用户组文件inode地址
@@ -1914,14 +1912,14 @@ void fs::userdel(char *user_name) {
     fread(&cur_dir_inode, sizeof(inode), 1, img.file_read);
 
 
-    for(int i = 0;i < 10; i++) {
+    for(int i = 0;i < BLOCK_ID0_NUM; i++) {
         if (cur_dir_inode.block_id0[i] == -1) {
             continue;
         }
         fseek(img.file_read, cur_dir_inode.block_id0[i], SEEK_SET);
         fread(&dir, sizeof(dir), 1, img.file_read);
 
-        for(int j = 0; j < 16; j++) {
+        for(int j = 0; j < Dir_ITEM_NUM_PER_BLOCK; j++) {
             if (strcmp(dir[j].file_name, "user") == 0 || strcmp(dir[j].file_name, "passwd") == 0 || strcmp(dir[j].file_name, "group") == 0) {
                 inode tmp{};
                 fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
@@ -2089,7 +2087,7 @@ bool fs::access(char *user_name, char *passwd) {
     inode user_inode{};
     inode passwd_inode{};
     inode cur_dir_inode{};
-    Dir dir[16];
+    Dir dir[Dir_ITEM_NUM_PER_BLOCK];
     //找到user文件和passwd文件的inode地址
     cd(cur_dir_addr, "etc");
     fseek(img.file_read, this->cur_dir_addr, SEEK_SET);
