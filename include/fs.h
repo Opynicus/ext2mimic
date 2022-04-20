@@ -17,7 +17,7 @@
 class fs {
 public:
     bool is_login;
-    fs(image& img, superBlock* super_block, bitMap* bit_map);
+    fs(image& img, superBlock& super_block, bitMap& bit_map);
     bool format();
     int mkdir(int parent_inode_addr, char name[]);
     int cd(int parent_inode_addr, const char name[]);
@@ -44,8 +44,8 @@ public:
 protected:
 private:
     image& img;
-    superBlock* super_block;
-    bitMap* bit_map;
+    superBlock& super_block;
+    bitMap& bit_map;
     int cur_dir_addr;                           //当前目录
     int nextUID;								//下一个要分配的用户标识号
     int nextGID;								//下一个要分配的用户组标识号

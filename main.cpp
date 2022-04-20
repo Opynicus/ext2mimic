@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
     superBlock super_block;
     bitMap bit_map;
 
-    fs fileSystem(img, &super_block,&bit_map);
+    fs fileSystem(img, super_block,bit_map);
     if (imgExist) {
         fileSystem.loadFs();
     } else {
