@@ -626,7 +626,8 @@ void fs::ls(int parent_inode_addr) {
 
     //依次取出磁盘块
     int i = 0;
-    while(i < cnt && i<BLOCK_NUM_PER_INODE) {
+    int num_per_line = 0;
+    while(i < cnt && i < BLOCK_NUM_PER_INODE) {
         Dir dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
         if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
             i += Dir_ITEM_NUM_PER_BLOCK;
@@ -652,38 +653,18 @@ void fs::ls(int parent_inode_addr) {
             if (i > 2 && (strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") ==  0)) {
                 continue;
             }
-
             //输出信息
-            if (((tmp.mode>>9) & 1) == 1) {
-                 cout << "d";
+            cout <<  dir[j].file_name << '\t';	//文件名
+            num_per_line++;
+            if (num_per_line % 5 == 0) {
+                num_per_line = 0;
+                cout << endl;
             }
-            else{
-                 cout << "-";
-            }
-
-
-            int permiss_index = 8;
-            while(permiss_index >= 0) {
-                if (((tmp.mode >> permiss_index) & 1) == 1) {
-                    if (permiss_index % 3 == 2)	 cout << "r";
-                    if (permiss_index % 3 == 1)	 cout << "w";
-                    if (permiss_index % 3 == 0)	 cout << "x";
-                }
-                else{
-                     cout << "-";
-                }
-                permiss_index--;
-            }
-             cout << "\t";
-             cout << tmp.link_num << "\t";	//该文件链接
-             cout << tmp.user_name << "\t";	//文件所属用户名
-             cout << tmp.group_name << "\t";	//文件所属用户名
-             cout << tmp.size << " B\t";	//文件大小
-             cout <<  dir[j].file_name << endl;	//文件名
             i++;
         }
 
     }
+    cout << endl;
 }
 
 /*
@@ -1094,13 +1075,23 @@ void fs::exit() {
  *  Your Fake CommandLine
  */
 void fs::commandLine(char *cmd) {
-    char argv1[100];
-    char argv2[100];
-    char argv3[100];
-    char buffer[100000];	//最大100K
+    char argv1[ARGV_LEN];
+    char argv2[ARGV_LEN];
+    char argv3[ARGV_LEN];
+    char buffer[100000];
     sscanf(cmd,"%s", argv1);
     if (strcmp(argv1, "ls") == 0) {
-        ls(cur_dir_addr);
+        sscanf(cmd, "%s%s", argv1, argv2);
+        if (strcmp(argv2, "") == 0) {
+            ls(cur_dir_addr);
+            return;
+        } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "l") != nullptr) {
+            lsl(cur_dir_addr);
+            return;
+        } else {
+            cout << "\tls: invalid option -- '" << argv2 << "'"<< endl;
+            return;
+        }
     }
     else if (strcmp(argv1, "cd") == 0) {
         sscanf(cmd, "%s%s", argv1, argv2);
@@ -1249,7 +1240,7 @@ void fs::help() {
      cout << "rmdir [dirName] : Delete dir" << endl;
      cout << "cd [dirName] : Change current directory" << endl;
      cout << "cat [fileName] : Display file content" << endl;
-     cout << "ls : List the file and directory" << endl;
+     cout << "ls [-l]: List the file and directory (-l: display file type, permissions, owner, file size)" << endl;
      cout << "chmod [fileName] [permissions] : Change the file permissions" << endl;
      cout << "touch [fileName] : Create a new empty file" << endl;
      cout << "stat [fileName | dirName] : Display file or dir detailed information" << endl;
@@ -1676,15 +1667,15 @@ void fs::useradd(char user_name[]) {
     }
     cout <<"new password: ";
     //用户密码
-    char password[100] = {0};
+    char password[MAX_PASSWD_LEN] = {0};
     fflush(stdin);
-    cin.getline(password, 100);
+    cin.getline(password, MAX_PASSWD_LEN);
 
     cout <<"retype new password: ";
     //确认密码
-    char refirm_password[100] = {0};
+    char refirm_password[MAX_PASSWD_LEN] = {0};
     fflush(stdin);
-    cin.getline(refirm_password, 100);
+    cin.getline(refirm_password, MAX_PASSWD_LEN);
     if (strcmp(password, refirm_password) != 0) {
          cout << "Different passwords ! Register failed" << endl;
         return;
@@ -2061,15 +2052,15 @@ void fs::delUser(char *buf, char *user_name) {
 }
 
 bool fs::login() {
-    char user_name[120] = {0};
-    char passwd[120] = {0};
+    char user_name[MAX_USER_NAME] = {0};
+    char passwd[MAX_PASSWD_LEN] = {0};
     cout << "Please login" << endl;
     cout << "username: ";
     fflush(stdin);
-    cin.getline(user_name, 100);
+    cin.getline(user_name, MAX_USER_NAME);
     cout << "password: ";
     fflush(stdin);
-    cin.getline(passwd, 100);
+    cin.getline(passwd, MAX_PASSWD_LEN);
     fflush(stdout);
     fflush(stdin);
     if (access(user_name, passwd)) {
@@ -2186,5 +2177,85 @@ bool fs::access(char *user_name, char *passwd) {
          cout << "Wrong Password !" << endl;
         cd(cur_dir_addr, "..");	//回到根目录
         return false;
+    }
+}
+
+void fs::lsl(int parent_inode_addr) {
+    inode cur{};
+    //取当前目录inode
+    fseek(img.file_read, parent_inode_addr, SEEK_SET);
+    fread(&cur,sizeof(inode), 1, img.file_read);
+    fflush(img.file_read);
+
+
+    //取出目录项数
+    int cnt = cur.link_num;
+
+
+    //判断文件模式。
+    if (!isPermitRead(cur)) {
+        cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
+        return ;
+    }
+
+    //依次取出磁盘块
+    int i = 0;
+    while(i < cnt && i<BLOCK_NUM_PER_INODE) {
+        Dir dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
+        if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
+            i += Dir_ITEM_NUM_PER_BLOCK;
+            continue;
+        }
+
+        fseek(img.file_read,cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+        fread(&dir, sizeof(dir), 1, img.file_read);
+        fflush(img.file_read);
+
+        for(int j = 0; j < Dir_ITEM_NUM_PER_BLOCK && i < cnt; j++) {
+
+            inode tmp{};
+            //取出该目录项的inode，判断该目录项是目录还是文件
+            fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
+            fread(&tmp, sizeof(inode),1,img.file_read);
+            fflush(img.file_read);
+
+            if (strcmp(dir[j].file_name, "") == 0) {
+                continue;
+            }
+
+            if (i > 2 && (strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") ==  0)) {
+                continue;
+            }
+
+            //输出信息
+            if (((tmp.mode>>9) & 1) == 1) {
+                cout << "d";
+            }
+            else{
+                cout << "-";
+            }
+
+
+            int permiss_index = 8;
+            while(permiss_index >= 0) {
+                if (((tmp.mode >> permiss_index) & 1) == 1) {
+                    if (permiss_index % 3 == 2)	 cout << "r";
+                    if (permiss_index % 3 == 1)	 cout << "w";
+                    if (permiss_index % 3 == 0)	 cout << "x";
+                }
+                else{
+                    cout << "-";
+                }
+                permiss_index--;
+            }
+            cout << "\t";
+            cout << tmp.link_num << "\t";	//该文件链接
+            cout << tmp.user_name << "\t";	//文件所属用户名
+            cout << tmp.group_name << "\t";	//文件所属用户名
+            cout << tmp.size << " B\t";	//文件大小
+            cout <<  dir[j].file_name << endl;	//文件名
+            i++;
+        }
+
     }
 }

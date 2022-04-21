@@ -23,6 +23,7 @@ public:
     int cd(int parent_inode_addr, const char name[]);
     void chmod(int parent_inode_addr, const char name[], int mode);
     void ls(int parent_inode_addr);
+    void lsl(int parent_inode_addr);
     int rmdir(int parent_inode_addr, char name[]);
     void rmrf(int parent_inode_addr);
     int rm(int parent_inode_addr, char name[]);

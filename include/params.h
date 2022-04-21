@@ -38,6 +38,11 @@ constexpr int ROOT_DIR_ADDR = INODE_TABLE_START_ADDR;
 constexpr int Dir_ITEM_NUM_PER_BLOCK = (BLOCK_SIZE / sizeof(unsigned int) / 8);       //每个Block拥有的目录项数量
 constexpr int BLOCK_ID0_NUM = 10;                                                    //Inode直接块数量
 
+constexpr int ARGV_LEN = 100;
+constexpr int MAX_USER_NAME = 120;
+constexpr int MAX_PASSWD_LEN = 120;
+
+
 #define MODE_DIR	01000					//目录标识
 #define MODE_FILE	00000					//文件标识
 #define FILE_DEF_PERMISSION 0664			//文件默认权限
