@@ -1662,8 +1662,9 @@ void fs::cat(int parent_inode_addr, char *name) {
         }
     }
     else {
-        cout <<"cat '"<< name << "': No such a file\n";
+        cout <<"cat '"<< name << "': No such a file" << endl;
     }
+    cout << endl;
 }
 /*
  * useradd指令，添加用户
@@ -1673,19 +1674,19 @@ void fs::useradd(char user_name[]) {
          cout << "Warning: Only root user can add user" << endl;
         return ;
     }
-    cout <<"password: ";
+    cout <<"new password: ";
     //用户密码
     char password[100] = {0};
     fflush(stdin);
     cin.getline(password, 100);
 
-    cout <<"refirm password: ";
+    cout <<"retype new password: ";
     //确认密码
     char refirm_password[100] = {0};
     fflush(stdin);
     cin.getline(refirm_password, 100);
     if (strcmp(password, refirm_password) != 0) {
-         cout << "different passwords ! Register failed" << endl;
+         cout << "Different passwords ! Register failed" << endl;
         return;
     }
     Dir dir[Dir_ITEM_NUM_PER_BLOCK];
