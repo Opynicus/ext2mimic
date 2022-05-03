@@ -10,7 +10,7 @@
 class vimimic {
 public:
     vimimic();
-    bool method(char *buf, int &cnt, int &max_len);
+    bool method(char *buf, char *ori_buf, int &cnt, int &max_len);
 protected:
 private:
     int mode;

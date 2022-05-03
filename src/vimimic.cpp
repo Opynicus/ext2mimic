@@ -17,7 +17,7 @@ vimimic::vimimic() {
     mode = 0;
 }
 
-bool vimimic::method(char *buf, int &cnt, int &max_len) {
+bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
     unsigned char c;
     if (mode == 0) {    //正常模式
         c = getch();
@@ -94,6 +94,7 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
 
             char cur_c;
             int input_char_num = 1;	//输入字符数量
+            char cmd[4];
             while((c = getch())) {
                 if (c == '\r') {	//回车
                     break;
@@ -105,17 +106,25 @@ bool vimimic::method(char *buf, int &cnt, int &max_len) {
                     printf("\b");
                     printf(" ");
                     printf("\b");
+                    cmd[input_char_num-1] = '#';
                     continue;
                 }
                 cur_c = c;
                 printf("%c", cur_c);
+                cmd[input_char_num-1] = cur_c;
                 input_char_num++;
             }
-            if (cur_c == 'q') { //vimimic出口
-                buf[cnt] = '\0';
-                SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
-                system("cls");
-                return false;
+            if (strstr(cmd, "wq") != nullptr) { //vimimic出口
+                    buf[cnt] = '\0';
+                    SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
+                    system("cls");
+                    return false;
+            }
+            if (strstr(cmd, "q!") != nullptr) { //vimimic出口
+                    strcpy(buf, ori_buf);
+                    SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
+                    system("cls");
+                    return false;
             }
             else {
                 if (cur_y - window_y + 2 > 0)
