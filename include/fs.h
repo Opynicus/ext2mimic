@@ -56,7 +56,7 @@ private:
     char cur_user_dir_name[MAX_FILE_NAME];      //当前登陆用户目录名
     bool isPermitRead(inode &cur);
     bool isPermitWrite(inode &cur);
-    void writefile(inode fileInode, int fileInodeAddr, char buf[]);
+    void writeFile(inode fileInode, int fileInodeAddr, char buf[]);
     int create(int parent_inode_addr, const char name[], char file_content[]);
     static void delUser(char buf[], char user_name[]);
     bool access(char user_name[], char passwd[]);

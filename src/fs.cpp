@@ -1378,7 +1378,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
     if (isExist) {
         //将buf内容写回文件的磁盘块
         if (isPermitWrite(fileInode)) {	//可写
-            writefile(fileInode, fileInodeAddr, buf);
+            writeFile(fileInode, fileInodeAddr, buf);
         } else{	//不可写
              cout << "WARNING: Permission denied(NO WRITE AUTHORITY)" << endl;
         }
@@ -1394,7 +1394,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
     }
 }
 
-void fs::writefile(inode fileInode, int fileInodeAddr, char *buf) {
+void fs::writeFile(inode fileInode, int fileInodeAddr, char *buf) {
     int read_len = strlen(buf);	//文件长度，单位为字节
     for(int k = 0; k < read_len; k += super_block.block_size) {	//最多10次，10个磁盘快，即最多5K
         //分配这个inode的磁盘块，从控制台读取内容
@@ -1810,7 +1810,7 @@ void fs::useradd(char user_name[]) {
     // 1 . 普通用户组 buffer + strlen(buffer) . 定位到末尾
     sprintf(buffer + strlen(buffer), "%s:x:%d:%d\n", user_name, nextUID++, 1);
     user_inode.size = strlen(buffer);
-    writefile(user_inode, user_inode_Addr, buffer);
+    writeFile(user_inode, user_inode_Addr, buffer);
 
 
     cnt = 0;
@@ -1827,7 +1827,7 @@ void fs::useradd(char user_name[]) {
 
     sprintf(buffer + strlen(buffer),"%s:%s\n", user_name, password);
     passwd_inode.size = strlen(buffer);
-    writefile(passwd_inode, passwd_inode_Addr, buffer);
+    writeFile(passwd_inode, passwd_inode_Addr, buffer);
 
 
     //取出group文件内容
@@ -1851,7 +1851,7 @@ void fs::useradd(char user_name[]) {
         sprintf(buffer+strlen(buffer)-1, ",%s\n", user_name);
     }
     group_inode.size = strlen(buffer);
-    writefile(group_inode, group_inode_Addr, buffer);
+    writeFile(group_inode, group_inode_Addr, buffer);
 
     //恢复现场，回到原来的目录
     strcpy(cur_user_name, tmp_cur_user_name);
@@ -1966,7 +1966,7 @@ void fs::userdel(char *user_name) {
 
     delUser(buffer, user_name);
     user_inode.size = strlen(buffer);
-    writefile(user_inode, passwd_inode_Addr, buffer);
+    writeFile(user_inode, passwd_inode_Addr, buffer);
 
     cnt = 0;
     for(int i = 0;i < passwd_inode.size;i++) {
@@ -1980,7 +1980,7 @@ void fs::userdel(char *user_name) {
     buffer[passwd_inode.size] = '\0';
     delUser(buffer, user_name);
     passwd_inode.size = strlen(buffer);
-    writefile(passwd_inode, passwd_inode_Addr, buffer);
+    writeFile(passwd_inode, passwd_inode_Addr, buffer);
 
     //取出group文件内容
     cnt = 0;
@@ -1996,7 +1996,7 @@ void fs::userdel(char *user_name) {
     buffer[group_inode.size] = '\0';
     delUser(buffer, user_name);
     group_inode.size = strlen(buffer);
-    writefile(group_inode, group_inode_Addr, buffer);
+    writeFile(group_inode, group_inode_Addr, buffer);
 
 
     char c, user_to_delete[110] = { 0 }, cmp_Cur_Dir_Name[311];
