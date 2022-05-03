@@ -223,7 +223,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
 
     int i = 0;
     int find_pos_i = -1, find_pos_j = -1;
-    // BLOCK_NUM_PER_INODE . BLOCK_ID0_NUM 直接 * Dir_ITEM_NUM_PER_BLOCK = BLOCK_NUM_PER_INODE 个目录项
+    // BLOCK_NUM_PER_INODE . BLOCK_ID0_NUM * Dir_ITEM_NUM_PER_BLOCK = BLOCK_NUM_PER_INODE 个目录项
     while(i < BLOCK_NUM_PER_INODE) {
         int dir_in_block = i / Dir_ITEM_NUM_PER_BLOCK;
         if (cur.block_id0[dir_in_block] == -1) {
@@ -447,6 +447,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
                 //找到一个空闲记录，将新文件创建到这个位置
                 find_pos_i = i / Dir_ITEM_NUM_PER_BLOCK;
                 find_pos_j = j;
+                break;
             }
             else if (strcmp(dir[j].file_name, name) == 0) {
                 //重名，取出inode，判断是否是文件
@@ -1263,7 +1264,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
     }
 
     //清空缓冲区
-    memset(buf,0,sizeof(buf));
+    memset(buf, 0, sizeof(buf));
     int maxlen = 0;	//到达过的最大长度
 
     //查找有无同名文件，有的话进入编辑模式，没有进入创建文件模式
@@ -1369,7 +1370,10 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
     //进入vi
     //先用vi读取文件内容
     vimimic vi;
-    while (vi.method(buf, cnt, maxlen)){/*编辑中，编辑完退出循环*/};
+    char ori_buf[100000];
+    memset(ori_buf, 0, sizeof(ori_buf));
+    strcpy(ori_buf, buf);
+    while (vi.method(buf, ori_buf, cnt, maxlen)){/*编辑中，编辑完退出循环*/};
     fs::fsInfo();
     if (isExist) {
         //将buf内容写回文件的磁盘块
@@ -1409,7 +1413,7 @@ void fs::writefile(inode fileInode, int fileInodeAddr, char *buf) {
         }
         //写入到当前目录的磁盘块
         fseek(img.file_write,curblockAddr,SEEK_SET);
-        fwrite(buf+k,super_block.block_size,1,img.file_write);
+        fwrite(buf+k*super_block.block_size,super_block.block_size,1,img.file_write);
         fflush(img.file_write);
     }
     //更新该文件大小
