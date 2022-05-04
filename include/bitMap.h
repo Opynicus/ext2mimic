@@ -10,8 +10,9 @@
 #include "params.h"
 
 class bitMap {
-public:
-    bool inode_bitmap[INODE_NUM];
-    bool block_bitmap[BLOCK_NUM];
-    bitMap();
+ public:
+  bool inode_bitmap[INODE_NUM];
+  bool block_bitmap[BLOCK_NUM];
+
+  bitMap();
 };
