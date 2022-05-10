@@ -7,6 +7,10 @@
 
 #include "params.h"
 
+enum editorMode {
+  NORMAL, INSERT
+};
+
 class vimimic {
  public:
   vimimic();
@@ -20,8 +24,6 @@ class vimimic {
   int window_y;
   int cur_x;
   int cur_y;
-  int last_x;
-  int last_y;
   HANDLE handle_out;                              //定义一个句柄
   CONSOLE_SCREEN_BUFFER_INFO screen_info;         //定义窗口缓冲区信息结构体
   COORD pos;                             //定义一个坐标结构体

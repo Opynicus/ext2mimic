@@ -12,14 +12,12 @@ vimimic::vimimic() {
   window_y = screen_info.srWindow.Bottom - screen_info.srWindow.Top + 1;
   cur_x = screen_info.dwCursorPosition.X;
   cur_y = screen_info.dwCursorPosition.Y;
-  last_x = screen_info.dwCursorPosition.X;
-  last_y = screen_info.dwCursorPosition.Y;
-  mode = 0;
+  mode = NORMAL;
 }
 
 bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
   unsigned char c;
-  if (mode == 0) {    //正常模式
+  if (mode == NORMAL) {    //正常模式
     c = getch();
     if (c == 'i' || c == 'a' || c == 'o') {    //切换为插入模式
       if (c == 'a') { //在当前光标的下一个位置处插入
@@ -57,7 +55,7 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
         redirectPos(handle_out, cur_x, cur_y);
       }
       redirectPos(handle_out, cur_x, cur_y);
-      mode = 1;
+      mode = INSERT;
     } else if (c == 224 || c == 'h' || c == 'l') {//光标移动
       c = getch();
       if (c == 75 || c == 'h') {
@@ -85,14 +83,13 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
         redirectPos(handle_out, 0, cur_y + 1);
       else
         redirectPos(handle_out, 0, window_y - 1);
-      WORD att = BACKGROUND_RED | BACKGROUND_BLUE | FOREGROUND_INTENSITY;
       SetConsoleTextAttribute(handle_out, FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE |
           FOREGROUND_GREEN);    //设置文本颜色
       printf(":");
 
       char cur_c;
       int input_char_num = 1;    //输入字符数量
-      char cmd[4];
+      char cmd[10];
       while ((c = getch())) {
         if (c == '\r') {    //回车
           break;
@@ -148,7 +145,7 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
         printf(" ");
       redirectPos(handle_out, cur_x, cur_y);
     }
-  } else if (mode == 1) {    //插入模式
+  } else if (mode == INSERT) {    //插入模式
 
     redirectPos(handle_out, window_x / 4 * 3, window_y - 1);
     int i = window_x / 4 * 3;
@@ -165,7 +162,7 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
 
     c = getch();
     if (c == 27) {    //按"esc"回到正常模式
-      mode = 0;
+      mode = NORMAL;
       //清状态条
       redirectPos(handle_out, 0, window_y - 1);
       SetConsoleTextAttribute(handle_out, screen_info.wAttributes);

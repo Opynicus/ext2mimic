@@ -646,7 +646,7 @@ void fs::ls(int parent_inode_addr) {
         continue;
       }
 
-      if (i > 2 && (strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") == 0)) {
+      if (i > 2 && ((strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") == 0))) {
         continue;
       }
       //输出信息
@@ -1115,7 +1115,7 @@ void fs::commandLine(char *cmd) {
       return;
     }
     stat(cur_dir_addr, argv2);
-  } else if (strcmp(argv1, "vi") == 0) {
+  } else if (strcmp(argv1, "vi") == 0 || strcmp(argv1, "vim") == 0 || strcmp(argv1, "nano") == 0) {
     sscanf(cmd, "%s%s", argv1, argv2);
     if (strcmp(argv2, "") == 0) {
       cout << "\n\tvi: missing operand\n\tTry 'vi [fileName]'" << endl;
@@ -1221,7 +1221,7 @@ void fs::help() {
   cout << "touch [fileName] : Create a new empty file" << endl;
   cout << "stat [fileName | dirName] : Display file or dir detailed information" << endl;
   cout << "rename [fileName | dirName] [fileName | dirName] : Rename a file or dir" << endl;
-  cout << "vi [fileName] : Edit file with fake Vi" << endl;
+  cout << "vi/vim/nano [fileName] : Edit file with fake Vi" << endl;
   cout << "pwd : Display current dir" << endl;
   cout << "useradd : Add a user" << endl;
   cout << "userdel : Delete a user" << endl;
@@ -2188,7 +2188,7 @@ void fs::lsl(int parent_inode_addr) {
         continue;
       }
 
-      if (i > 2 && (strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") == 0)) {
+      if (i > 2 && ((strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") == 0))) {
         continue;
       }
 
