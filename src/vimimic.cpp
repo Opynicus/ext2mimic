@@ -56,13 +56,11 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
       }
       redirectPos(handle_out, cur_x, cur_y);
       mode = INSERT;
-    } else if (c == 224 || c == 'h' || c == 'l') {//光标移动
-      c = getch();
-      if (c == 75 || c == 'h') {
-        moveLeft(buf, cnt);
-      } else if (c == 77 || c == 'l') {
-        moveRight(buf, cnt, max_len);
-      }
+    } else if (c == LEFT_ARROW || c == 'h') {
+      moveLeft(buf, cnt);
+      return true;
+    } else if (c == RIGHT_ARROW || c == 'l') {
+      moveRight(cnt, max_len);
       return true;
     } else if (c == 'x') {    //正常模式下的删除，'x'。
       return delChar(buf, cnt);
@@ -87,7 +85,7 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
           FOREGROUND_GREEN);    //设置文本颜色
       printf(":");
 
-      char cur_c;
+      unsigned char cur_c;
       int input_char_num = 1;    //输入字符数量
       char cmd[10];
       while ((c = getch())) {
@@ -138,7 +136,7 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
         SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
         redirectPos(handle_out, cur_x, cur_y);
       }
-    } else if (c == 27) {    //按"esc"回到正常模式，保存最后修改的光标位置
+    } else if (c == ESC) {    //按"esc"回到正常模式，保存最后修改的光标位置
       redirectPos(handle_out, 0, window_y - 1);
       SetConsoleTextAttribute(handle_out, screen_info.wAttributes);
       for (int i = 0; i < window_x - 1; i++)
@@ -161,7 +159,7 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
     redirectPos(handle_out, cur_x, cur_y);
 
     c = getch();
-    if (c == 27) {    //按"esc"回到正常模式
+    if (c == ESC) {    //按"esc"回到正常模式
       mode = NORMAL;
       //清状态条
       redirectPos(handle_out, 0, window_y - 1);
@@ -173,13 +171,11 @@ bool vimimic::method(char *buf, char *ori_buf, int &cnt, int &max_len) {
       return true;
     } else if (c == '\b') {
       return delChar(buf, cnt);
-    } else if (c == 224) {//光标移动
-      c = getch();
-      if (c == 75) {
-        moveLeft(buf, cnt);
-      } else if (c == 77) {
-        moveRight(buf, cnt, max_len);
-      }
+    } else if (c == LEFT_ARROW) {
+      moveLeft(buf, cnt);
+      return true;
+    } else if (c == RIGHT_ARROW) {
+      moveRight(cnt, max_len);
       return true;
     }
     if (c == '\r') {    //回车
@@ -250,7 +246,7 @@ void vimimic::redirectPos(HANDLE hout, int x, int y) {
 /*
  * 光标左移
  */
-void vimimic::moveLeft(char *buf, int &cnt) {  //左移
+void vimimic::moveLeft(const char *buf, int &cnt) {  //左移
   if (cnt != 0) {
     cnt--;
     cur_x--;
@@ -270,7 +266,7 @@ void vimimic::moveLeft(char *buf, int &cnt) {  //左移
 /*
  * 光标右移
  */
-void vimimic::moveRight(char *buf, int &cnt, int &max_len) { //右移
+void vimimic::moveRight(int &cnt, int &max_len) { //右移
   cnt++;
   if (cnt > max_len)
     max_len = cnt;
@@ -291,8 +287,11 @@ void vimimic::moveRight(char *buf, int &cnt, int &max_len) { //右移
 }
 
 bool vimimic::delChar(char *buf, int &cnt) {
-  if (cnt == 0)    //已经退到最开始位置
+  if (cnt == -1) {
+    return false;
+  } else if (cnt == 0) {    //已经退到最开始位置
     return true;
+  }
   printf("\b");
   printf(" ");
   printf("\b");

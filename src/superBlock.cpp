@@ -18,7 +18,7 @@ superBlock::superBlock() {
   memset(free_block_stack, 0, sizeof(free_block_stack));
   free_addr = DATA_BLOCK_START_ADDR;
 
-  create_time = time(NULL);
+  create_time = time(nullptr);
   last_mount_time = 0;
   last_write_time = 0;
 
@@ -59,7 +59,7 @@ void superBlock::writeSuperBlock2img(FILE *img) {
   //cout<< "SuperBlock写入到img文件完成" << endl;
 }
 
-void superBlock::printSuperBlockInfo() const {
+__attribute__((unused)) void superBlock::printSuperBlockInfo() const {
   cout << "下面输出Block信息：" << endl;
   cout << "Inode总量为 " << inode_num << endl;
   cout << "Block总量为 " << block_num << endl;

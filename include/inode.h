@@ -22,7 +22,7 @@ class inode {
   time_t create_time;                     // 创建或状态改变时间
   time_t last_read_time;                  // 上次读取时间
   time_t last_modified_time;              // 上次修改时间
-  void debugInfo();
+  __attribute__((unused)) void debugInfo();
 
  protected:
  private:

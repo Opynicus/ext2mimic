@@ -39,7 +39,7 @@ class superBlock {
   superBlock();                                   //初始化
   void initFreeBlockStack(FILE *fw);              //初始化磁盘块区，根据成组链接法组织
   void writeSuperBlock2img(FILE *img);            //将superBlock中的内容写入img
-  void printSuperBlockInfo() const;               //打印superBlock信息
+  __attribute__((unused)) void printSuperBlockInfo() const;               //打印superBlock信息
 
  protected:
  private:

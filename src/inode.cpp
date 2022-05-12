@@ -2,12 +2,10 @@
 // Created by Opynicus on 2022/4/13.
 //
 
-#include <cstring>
 #include <iostream>
 #include "../include/inode.h"
-#include "../include/params.h"
 
-void inode::debugInfo() {
+__attribute__((unused)) void inode::debugInfo() {
   cout << "inode_id:                 " << inode_id << endl;
   cout << "mode:            " << mode << endl;
   cout << "user_name:                 " << user_name << endl;

@@ -11,6 +11,10 @@ enum editorMode {
   NORMAL, INSERT
 };
 
+enum editorKey {
+  ESC = 27, LEFT_ARROW = 75, RIGHT_ARROW = 77
+};
+
 class vimimic {
  public:
   vimimic();
@@ -29,9 +33,9 @@ class vimimic {
   COORD pos;                             //定义一个坐标结构体
   static void redirectPos(HANDLE hout, int x, int y);
 
-  void moveLeft(char *buf, int &cnt);
+  void moveLeft(const char *buf, int &cnt);
 
-  void moveRight(char *buf, int &cnt, int &max_len);
+  void moveRight(int &cnt, int &max_len);
 
   bool delChar(char *buf, int &cnt);
 };

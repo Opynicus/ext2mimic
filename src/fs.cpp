@@ -304,6 +304,9 @@ int fs::mkdir(int parent_inode_addr, char *name) {
     p.size = super_block.block_size;
     p.block_id1 = -1;
     p.mode = MODE_DIR | DIR_DEF_PERMISSION;
+    p.create_time = time(nullptr);
+    p.last_modified_time = time(nullptr);
+    p.last_read_time = time(nullptr);
 
     //保存inode至分配地址
     fseek(img.file_write, cur_inode_addr, SEEK_SET);
@@ -520,6 +523,9 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
     p.block_id1 = -1;
     p.mode = 0;
     p.mode = MODE_FILE | FILE_DEF_PERMISSION;
+    p.create_time = time(nullptr);
+    p.last_modified_time = time(nullptr);
+    p.last_read_time = time(nullptr);
 
     //将inode写入到申分配地址
     fseek(img.file_write, cur_inode_addr, SEEK_SET);
@@ -1247,7 +1253,7 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
   Dir dir[Dir_ITEM_NUM_PER_BLOCK];    //临时目录清单
 
   //从这个地址取出inode
-  inode cur, fileInode;
+  inode cur{}, fileInode{};
   fseek(img.file_read, parent_inode_addr, SEEK_SET);
   fread(&cur, sizeof(inode), 1, img.file_read);
 
@@ -1393,7 +1399,8 @@ void fs::writeFile(inode fileInode, int fileInodeAddr, char *buf) {
   }
   //更新该文件大小
   fileInode.size = read_len;
-  fileInode.last_modified_time = time(NULL);
+  fileInode.last_modified_time = time(nullptr);
+  fileInode.last_read_time = time(nullptr);
   fseek(img.file_write, fileInodeAddr, SEEK_SET);
   fwrite(&fileInode, sizeof(inode), 1, img.file_write);
   fflush(img.file_write);
@@ -1509,6 +1516,7 @@ int fs::rename(int parent_inode_addr, char *ori_name, char *modify_name) {
   fseek(img.file_read, parent_inode_addr, SEEK_SET);
   fread(&cur, sizeof(inode), 1, img.file_read);
 
+  cur.last_read_time = time(nullptr);
   int cnt = cur.link_num;
 
   if (!isPermitWrite(cur)) {
@@ -1535,6 +1543,7 @@ int fs::rename(int parent_inode_addr, char *ori_name, char *modify_name) {
       fseek(img.file_read, j.inodeAddr, SEEK_SET);
       fread(&tmp, sizeof(inode), 1, img.file_read);
       if (strcmp(j.file_name, ori_name) == 0) {
+        cur.last_modified_time = time(nullptr);
         strcpy(j.file_name, modify_name);
         fseek(img.file_write, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
         fwrite(&dir, sizeof(dir), 1, img.file_write);
@@ -1872,30 +1881,30 @@ void fs::userdel(char *user_name) {
   fseek(img.file_read, cur_dir_addr, SEEK_SET);
   fread(&cur_dir_inode, sizeof(inode), 1, img.file_read);
 
-  for (int i = 0; i < BLOCK_ID0_NUM; i++) {
-    if (cur_dir_inode.block_id0[i] == -1) {
+  for (unsigned int i : cur_dir_inode.block_id0) {
+    if (i == -1) {
       continue;
     }
-    fseek(img.file_read, cur_dir_inode.block_id0[i], SEEK_SET);
+    fseek(img.file_read, i, SEEK_SET);
     fread(&dir, sizeof(dir), 1, img.file_read);
 
-    for (int j = 0; j < Dir_ITEM_NUM_PER_BLOCK; j++) {
-      if (strcmp(dir[j].file_name, "user") == 0 || strcmp(dir[j].file_name, "passwd") == 0 ||
-          strcmp(dir[j].file_name, "group") == 0) {
+    for (auto &j : dir) {
+      if (strcmp(j.file_name, "user") == 0 || strcmp(j.file_name, "passwd") == 0 ||
+          strcmp(j.file_name, "group") == 0) {
         inode tmp{};
-        fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
+        fseek(img.file_read, j.inodeAddr, SEEK_SET);
         fread(&tmp, sizeof(inode), 1, img.file_read);
 
         //文件名标识别符号判断
         if (((tmp.mode >> 9) & 1) == 0) {
-          if (strcmp(dir[j].file_name, "user") == 0) {
-            user_inode_Addr = dir[j].inodeAddr;
+          if (strcmp(j.file_name, "user") == 0) {
+            user_inode_Addr = j.inodeAddr;
             user_inode = tmp;
-          } else if (strcmp(dir[j].file_name, "passwd") == 0) {
-            passwd_inode_Addr = dir[j].inodeAddr;
+          } else if (strcmp(j.file_name, "passwd") == 0) {
+            passwd_inode_Addr = j.inodeAddr;
             passwd_inode = tmp;
-          } else if (strcmp(dir[j].file_name, "group") == 0) {
-            group_inode_Addr = dir[j].inodeAddr;
+          } else if (strcmp(j.file_name, "group") == 0) {
+            group_inode_Addr = j.inodeAddr;
             group_inode = tmp;
           }
         }
