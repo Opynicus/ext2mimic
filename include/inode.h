@@ -18,6 +18,7 @@ class inode {
   unsigned int flag;                      // 文件标志位
   unsigned int link_num;                  // 链接数
   unsigned int block_id0[BLOCK_ID0_NUM];  // block直接指向，这10个指针保存了10 * BLOCK_SIZE = 10 * 512 = 5120B的数据
+  //TODO: 如果需要扩容，二级直接块与三级直接块将是必要的
   unsigned int block_id1;                 // block间接指向，一个指针4Bytes，(512 / 4) * 512 = (128 * 512)B
   time_t create_time;                     // 创建或状态改变时间
   time_t last_read_time;                  // 上次读取时间
