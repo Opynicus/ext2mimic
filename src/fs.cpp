@@ -1312,11 +1312,10 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
       return;
     }
 
-    //将文件内容读取出来，显示在，窗口上
     int sumlen = fileInode.size;    //文件长度
     int getlen = 0;    //取出来的长度
+    char fileContent[100000] = {0};
     for (unsigned int i : fileInode.block_id0) {
-      char fileContent[1000] = {0};
       if (i == -1) {
         continue;
       }
@@ -2200,7 +2199,6 @@ void fs::lsl(int parent_inode_addr) {
       if (i > 2 && ((strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") == 0))) {
         continue;
       }
-
       //输出信息
       if (((tmp.mode >> 9) & 1) == 1) {
         cout << "d";

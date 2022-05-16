@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define IMAGE_FILE_NAME "disk.img"
+#define IMAGE_FILE_NAME "ext2.vhdx"
 
 constexpr int MAX_FILE_NAME = 28;                               //最长文件名
 
