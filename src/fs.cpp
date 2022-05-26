@@ -1202,9 +1202,9 @@ void fs::commandLine(char *cmd) {
  */
 void fs::commandLinePrompt() {
   if (strcmp(cur_user_name, "root") == 0) {
-    cout << "[root@Mimic "<<cur_dir_name<<" ]# ";
+    cout << "[root@Mimic]# ";
   } else {
-    cout <<"[" << cur_user_name << "@Mimic "<<cur_dir_name<<" ]$ ";
+    cout <<"[" << cur_user_name << "@Mimic]$ ";
   }
 }
 
