@@ -92,8 +92,11 @@ bool fs::format() {
   sprintf(buf, "root:x:%d:%d\n", nextUID++, nextGID++);
   //创建用户信息文件
   create(cur_dir_addr, "user", buf);
+  //输入root密码
+  cout <<endl<< "This is a brand new file system, please input root password." << endl;
+  string root_map = "root:" + getPasswdConfirm(MAX_PASSWD_LEN) + "\n";
   //增加条目，用户名：密码
-  sprintf(buf, "root:root\n");
+  sprintf(buf, root_map.c_str());
   //创建用户密码文件
   create(cur_dir_addr, "passwd", buf);
   //修改权限，禁止其它用户读取该文件
@@ -1199,9 +1202,9 @@ void fs::commandLine(char *cmd) {
  */
 void fs::commandLinePrompt() {
   if (strcmp(cur_user_name, "root") == 0) {
-    cout << "[root@Mimic ~]# ";
+    cout << "[root@Mimic "<<cur_dir_name<<" ]# ";
   } else {
-    cout << cur_user_name << "[@Mimic ~]$ ";
+    cout <<"[" << cur_user_name << "@Mimic "<<cur_dir_name<<" ]$ ";
   }
 }
 
@@ -2027,18 +2030,25 @@ void fs::delUser(char *buf, char *user_name) {
 }
 
 bool fs::login() {
-  char user_name[MAX_USER_NAME] = {0};
-  char passwd[MAX_PASSWD_LEN] = {0};
+//  char user_name[MAX_USER_NAME] = {0};
+//  char passwd[MAX_PASSWD_LEN] = {0};
+
+  string user_name,passwd;
+
+
+
   cout << "Please login" << endl;
   cout << "username: ";
-  fflush(stdin);
-  cin.getline(user_name, MAX_USER_NAME);
+//  fflush(stdin);
+//  cin.getline(user_name, MAX_USER_NAME);
+  user_name = getRegular(MAX_USER_NAME);
   cout << "password: ";
-  fflush(stdin);
-  cin.getline(passwd, MAX_PASSWD_LEN);
+//  fflush(stdin);
+//  cin.getline(passwd, MAX_PASSWD_LEN);
+  passwd = getPasswd(MAX_PASSWD_LEN);
   fflush(stdout);
   fflush(stdin);
-  if (access(user_name, passwd)) {
+  if (access(user_name.c_str(), passwd.c_str())) {
     is_login = true;
     return true;
   } else {
@@ -2047,7 +2057,7 @@ bool fs::login() {
   }
 }
 
-bool fs::access(char *user_name, char *passwd) {
+bool fs::access(const char *user_name, const char *passwd) {
   int user_inode_addr = -1;
   int passwd_inode_addr = -1;
   inode user_inode{};

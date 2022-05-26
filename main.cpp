@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
   } else {
     fileSystem.format();
   }
+  system("cls");
   while (!fileSystem.login()) {/*待登录*/};
   system("cls");
   fs::fsInfo();

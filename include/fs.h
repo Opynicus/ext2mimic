@@ -12,6 +12,7 @@
 #include "Dir.h"
 #include "bitMap.h"
 #include "vimimic.h"
+#include "utils.h"
 
 class fs {
  public:
@@ -120,7 +121,7 @@ class fs {
   static void delUser(char buf[], char user_name[]);
 
   //登录检测
-  bool access(char user_name[], char passwd[]);
+  bool access(const char user_name[], const char passwd[]);
 
   //释放Inode
   int freeInode(int parent_inode_addr);
