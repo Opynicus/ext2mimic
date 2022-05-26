@@ -8,24 +8,23 @@
  * Type in password without display
  *  #Not for direct call
  */
-string _getPasswd()
-{
+string _getPasswd() {
   fflush(stdin);
   string str;
-  int i=0;
+  int i = 0;
   char ch;
-  while ((ch=_getch())!=13){
-    if(ch == '\b'){
+  while ((ch = _getch()) != 13) {
+    if (ch == '\b') {
       //cout<<"\b \b";
-      if(str.length()!=0){
+      if (str.length() != 0) {
         str.pop_back();
       }
       continue;
     }
-    if(ch == ' '){
+    if (ch == ' ') {
       continue;
     }
-    str+=ch;
+    str += ch;
     //cout<<"*";
   }
   return str;
@@ -35,10 +34,10 @@ string _getPasswd()
  * Input regular text
  * #Not for direct call
  */
-string _getRegular(){
+string _getRegular() {
   fflush(stdin);
   string str;
-  cin>>str;
+  cin >> str;
   return str;
 }
 
@@ -46,14 +45,14 @@ string _getRegular(){
  * Input function with length limit, and overlength warning.
  * #Not for direct call
  */
-string _getLine(int maxNum, string(*func)()){
+string _getLine(int maxNum, string(*func)()) {
 
-  while(true){
+  while (true) {
     string temp = func();
-    if(temp.length()>maxNum){
-      cout<<endl<<"Too Long. Must under "<<maxNum<<"words"<<endl;
+    if (temp.length() > maxNum) {
+      cout << endl << "Too Long. Must under " << maxNum << "words" << endl;
       continue;
-    } else{
+    } else {
       return temp;
     }
   }
@@ -62,18 +61,18 @@ string _getLine(int maxNum, string(*func)()){
 /*
  * Input password with Validation process.
  */
-string getPasswdConfirm(int maxNum){
-  string passwd,passwdAgain;
-  while(true){
+string getPasswdConfirm(int maxNum) {
+  string passwd, passwdAgain;
+  while (true) {
     passwd = _getLine(maxNum, _getPasswd);
-    cout <<endl<<"Type again, please."<<endl;
+    cout << endl << "Type again, please." << endl;
     fflush(stdout);
     passwdAgain = _getLine(maxNum, _getPasswd);
-    if(passwd != passwdAgain){
-      cout <<endl<<"Two passwords are different. Try again from the first. "<<endl;
+    if (passwd != passwdAgain) {
+      cout << endl << "Two passwords are different. Try again from the first. " << endl;
       fflush(stdout);
       continue;
-    }else{
+    } else {
       return passwd;
     }
   }
@@ -81,13 +80,13 @@ string getPasswdConfirm(int maxNum){
 /*
  * Input regular text
  */
-string getRegular(int maxNum){
-  return _getLine(maxNum,_getRegular);
+string getRegular(int maxNum) {
+  return _getLine(maxNum, _getRegular);
 }
 
 /*
  * Input password without Validation process.
  */
-string getPasswd(int maxNum){
-  return _getLine(maxNum,_getPasswd);
+string getPasswd(int maxNum) {
+  return _getLine(maxNum, _getPasswd);
 }
