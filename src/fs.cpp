@@ -1202,9 +1202,9 @@ void fs::commandLine(char *cmd) {
  */
 void fs::commandLinePrompt() {
   if (strcmp(cur_user_name, "root") == 0) {
-    cout << "[root@Mimic]# ";
+    cout << "[root@Mimic]"<<convertCurDir(cur_dir_name,cur_user_dir_name)<<"# ";
   } else {
-    cout <<"[" << cur_user_name << "@Mimic]$ ";
+    cout <<"[" << cur_user_name << "@Mimic]"<<convertCurDir(cur_dir_name,cur_user_dir_name)<<"$ ";
   }
 }
 
@@ -1655,19 +1655,20 @@ void fs::useradd(char user_name[]) {
   }
   cout << "new password: ";
   //用户密码
-  char password[MAX_PASSWD_LEN] = {0};
-  fflush(stdin);
-  cin.getline(password, MAX_PASSWD_LEN);
-
-  cout << "retype new password: ";
-  //确认密码
-  char refirm_password[MAX_PASSWD_LEN] = {0};
-  fflush(stdin);
-  cin.getline(refirm_password, MAX_PASSWD_LEN);
-  if (strcmp(password, refirm_password) != 0) {
-    cout << "Different passwords ! Register failed" << endl;
-    return;
-  }
+//  char password[MAX_PASSWD_LEN] = {0};
+//  fflush(stdin);
+//  cin.getline(password, MAX_PASSWD_LEN);
+//
+//  cout << "retype new password: ";
+//  //确认密码
+//  char refirm_password[MAX_PASSWD_LEN] = {0};
+//  fflush(stdin);
+//  cin.getline(refirm_password, MAX_PASSWD_LEN);
+//  if (strcmp(password, refirm_password) != 0) {
+//    cout << "Different passwords ! Register failed" << endl;
+//    return;
+//  }
+  string password = getPasswdConfirm(MAX_PASSWD_LEN);
   Dir dir[Dir_ITEM_NUM_PER_BLOCK];
   int user_inode_Addr = -1;    //用户文件inode地址
   int passwd_inode_Addr = -1;    //用户密码文件inode地址
@@ -1804,7 +1805,7 @@ void fs::useradd(char user_name[]) {
   }
   buffer[passwd_inode.size] = '\0';
 
-  sprintf(buffer + strlen(buffer), "%s:%s\n", user_name, password);
+  sprintf(buffer + strlen(buffer), "%s:%s\n", user_name, password.c_str());
   passwd_inode.size = strlen(buffer);
   writeFile(passwd_inode, passwd_inode_Addr, buffer);
 

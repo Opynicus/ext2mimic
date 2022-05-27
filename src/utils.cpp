@@ -91,3 +91,20 @@ string getRegular(int maxNum){
 string getPasswd(int maxNum){
   return _getLine(maxNum,_getPasswd);
 }
+
+/*
+ * Convert dir_name '/home/#username#/' to '~'
+ */
+string convertCurDir(char* dir, char*parse){
+  string temp_dir = dir;
+  string temp_user_dir = parse;
+
+  int length = temp_user_dir.length();
+  if(temp_dir == temp_user_dir){
+    return "~";
+  }
+  if(temp_dir.substr(0,length) == temp_user_dir){
+    return "~" + temp_dir.substr(length);
+  }
+  return temp_dir;
+}
