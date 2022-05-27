@@ -611,7 +611,7 @@ void fs::chmod(int parent_inode_addr, const char *name, int mode) {
  *  ls命令，显示该目录下所有文件夹与文件
  *  params: 当前目录地址
  */
-void fs::ls(int parent_inode_addr) {
+void fs::ls(int parent_inode_addr, bool isAll) {
   inode cur{};
   //取当前目录inode
   fseek(img.file_read, parent_inode_addr, SEEK_SET);
@@ -621,6 +621,7 @@ void fs::ls(int parent_inode_addr) {
 
   //取出目录项数
   int cnt = cur.link_num;
+
 
 
   //判断文件模式。
@@ -656,6 +657,13 @@ void fs::ls(int parent_inode_addr) {
       }
 
       if (i > 2 && ((strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") == 0))) {
+        continue;
+      }
+      //当没有使用ls -a时，每找到一个以"."开头的文件就需要跳过，并把cnt减1，防止多显示。
+      if(!isAll && dir[j].file_name[0] == '.'){
+        if(tmp.flag == false) {
+          cnt--;
+        }
         continue;
       }
       //输出信息
@@ -1084,10 +1092,13 @@ void fs::commandLine(char *cmd) {
   if (strcmp(argv1, "ls") == 0) {
     sscanf(cmd, "%s%s", argv1, argv2);
     if (strcmp(argv2, "") == 0) {
-      ls(cur_dir_addr);
+      ls(cur_dir_addr, false);
       return;
     } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "l") != nullptr) {
       lsl(cur_dir_addr);
+      return;
+    } else if(strstr(argv2, "-") != nullptr && strstr(argv2, "a") != nullptr){
+      ls(cur_dir_addr, true);
       return;
     } else {
       cout << "\tls: invalid option -- '" << argv2 << "'" << endl;

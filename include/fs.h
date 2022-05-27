@@ -34,7 +34,7 @@ class fs {
   void chmod(int parent_inode_addr, const char name[], int mode);
 
   //ls命令，显示该目录下所有文件及目录
-  void ls(int parent_inode_addr);
+  void ls(int parent_inode_addr, bool isAll);
 
   //ls -l命令，显示该目录下所有文件及目录具体信息
   void lsl(int parent_inode_addr);
