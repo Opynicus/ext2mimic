@@ -93,7 +93,7 @@ bool fs::format() {
   //创建用户信息文件
   create(cur_dir_addr, "user", buf);
   //输入root密码
-  cout <<endl<< "This is a brand new file system, please input root password." << endl;
+  cout << endl << "This is a brand new file system, please input root password." << endl;
   string root_map = "root:" + getPasswdConfirm(MAX_PASSWD_LEN) + "\n";
   //增加条目，用户名：密码
   sprintf(buf, root_map.c_str());
@@ -2045,9 +2045,7 @@ bool fs::login() {
 //  char user_name[MAX_USER_NAME] = {0};
 //  char passwd[MAX_PASSWD_LEN] = {0};
 
-  string user_name,passwd;
-
-
+  string user_name, passwd;
 
   cout << "Please login" << endl;
   cout << "username: ";
@@ -2122,7 +2120,9 @@ bool fs::access(const char *user_name, const char *passwd) {
     user[i] = buffer[block_cnt++];
   }
   user[i] = '\0';
-  if (strstr(user, user_name) == nullptr) {
+  char user_name_j[MAX_USER_NAME + 2];
+  sprintf(user_name_j, "%s:x", user_name);
+  if (strstr(user, user_name_j) == nullptr) {
     cout << "Warning: User doesn't exist" << endl;
     cd(cur_dir_addr, "..");
     return false;
