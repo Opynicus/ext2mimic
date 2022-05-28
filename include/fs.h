@@ -30,6 +30,9 @@ class fs {
   //cd命令，在当前目录下进入子目录
   int cd(int parent_inode_addr, const char name[]);
 
+  //包含绝对路径的cd
+  int cda(int parent_inode_addr, const char name[]);
+
   //chmod命令，修改当前目录权限
   void chmod(int parent_inode_addr, const char name[], int mode);
 

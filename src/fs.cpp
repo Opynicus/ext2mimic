@@ -226,10 +226,18 @@ int fs::mkdir(int parent_inode_addr, char *name) {
 
   int i = 0;
   int find_pos_i = -1, find_pos_j = -1;
+
+  int first_empty_id0 = -1;//第一个找到的全空的id0
+  bool is_first_empty_id0 = true;//用于first_empty_id0的寻找
+
   // BLOCK_NUM_PER_INODE . BLOCK_ID0_NUM * Dir_ITEM_NUM_PER_BLOCK = BLOCK_NUM_PER_INODE 个目录项
   while (i < BLOCK_NUM_PER_INODE) {
     int dir_in_block = i / Dir_ITEM_NUM_PER_BLOCK;
     if (cur.block_id0[dir_in_block] == -1) {
+      if(is_first_empty_id0){
+        first_empty_id0 = i / Dir_ITEM_NUM_PER_BLOCK;
+        is_first_empty_id0 = false;
+      }
       i += Dir_ITEM_NUM_PER_BLOCK;
       continue;
     }
@@ -325,7 +333,68 @@ int fs::mkdir(int parent_inode_addr, char *name) {
     fwrite(&cur, sizeof(inode), 1, img.file_write);
     fflush(img.file_write);
     return 0;
-  } else {
+  } else if (first_empty_id0 != -1){
+    //启用一个新的id0地址,并为止分配一个数据块来存储地址
+    cur.block_id0[first_empty_id0] = bAlloc();
+
+    Dir new_dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
+    strcpy(new_dir[0].file_name, name);
+    int cur_inode_addr = iAlloc();
+    if (cur_inode_addr == -1) {
+      cout << "ERROR: alloc inode failed" << endl;
+      return 2;
+    }
+    new_dir[0].inodeAddr = cur_inode_addr;
+
+    inode p{};
+    p.inode_id = static_cast<unsigned short>((cur_inode_addr - INODE_TABLE_START_ADDR) / super_block.inode_size);
+    strcpy(p.user_name, cur_user_name);
+    strcpy(p.group_name, cur_group_name);
+    p.link_num = 2;        //两个项，当前目录, "."和".."
+
+    //分配当前inode的block，写入两条记录 "." 和 ".."
+    int cur_block_addr = bAlloc();
+    if (cur_block_addr == -1) {
+      cout << "ERROR: alloc block failed" << endl;
+      return 4;
+    }
+    Dir dir2[Dir_ITEM_NUM_PER_BLOCK] = {0};
+    strcpy(dir2[0].file_name, ".");
+    strcpy(dir2[1].file_name, "..");
+    dir2[0].inodeAddr = cur_inode_addr;                //当前目录inode地址
+    dir2[1].inodeAddr = parent_inode_addr;            //父目录inode地址
+
+    //写入到当前目录的Block，一次写满一个Block
+    fseek(img.file_write, cur_block_addr, SEEK_SET);
+    fwrite(dir2, sizeof(dir2), 1, img.file_write);
+
+    //让新建的inode的第一个直接块指向被分配的Block地址
+    memset(p.block_id0, -1, sizeof(p.block_id0));
+    p.block_id0[0] = cur_block_addr;
+
+    p.size = super_block.block_size;
+    p.block_id1 = -1;
+    p.mode = MODE_DIR | DIR_DEF_PERMISSION;
+    p.create_time = time(nullptr);
+    p.last_modified_time = time(nullptr);
+    p.last_read_time = time(nullptr);
+
+    //保存inode至分配地址
+    fseek(img.file_write, cur_inode_addr, SEEK_SET);
+    fwrite(&p, sizeof(inode), 1, img.file_write);
+
+    //将当前目录的Block内容写回原来位置
+    fseek(img.file_write, cur.block_id0[find_pos_i], SEEK_SET);
+    fwrite(new_dir, sizeof(dir), 1, img.file_write);
+
+    //保存inode
+    cur.link_num++;
+    fseek(img.file_write, parent_inode_addr, SEEK_SET);
+    fwrite(&cur, sizeof(inode), 1, img.file_write);
+    fflush(img.file_write);
+    return 0;
+
+  }else {
     cout << "ERROR: no free dir, mkdir failed" << endl;
     return 5;
   }
@@ -418,6 +487,7 @@ int fs::bAlloc() {
  * 文件已经存在       return 1
  * inode分配失败    return 2
  * block分配失败    return 3
+ * id0地址耗尽      return 4
  */
 int fs::create(int parent_inode_addr, const char *name, char *file_content) {
   if (strlen(name) >= MAX_FILE_NAME) {
@@ -433,9 +503,19 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
 
   int i = 0;
   int find_pos_i = -1, find_pos_j = -1;
+
+
+  int first_empty_id0 = -1;//第一个找到的全空的id0
+  bool is_first_empty_id0 = true;//用于first_empty_id0的寻找
+
+
   while (i < BLOCK_NUM_PER_INODE) {
 
     if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
+      if(is_first_empty_id0){
+        first_empty_id0 = i / Dir_ITEM_NUM_PER_BLOCK;
+        is_first_empty_id0 = false;
+      }
       i += Dir_ITEM_NUM_PER_BLOCK;
       continue;
     }
@@ -450,7 +530,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
         //找到一个空闲记录，将新文件创建到这个位置
         find_pos_i = i / Dir_ITEM_NUM_PER_BLOCK;
         find_pos_j = j;
-        break;
+//        break;
       } else if (strcmp(dir[j].file_name, name) == 0) {
         //重名，取出inode，判断是否是文件
         inode tmp{};
@@ -544,8 +624,88 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
     fwrite(&cur, sizeof(inode), 1, img.file_write);
     fflush(img.file_write);
     return 0;
-  } else
+  } else if(first_empty_id0 != -1){
+    //启用一个新的id0地址,并为止分配一个数据块来存储地址
+    cur.block_id0[first_empty_id0] = bAlloc();
+
+    //将当前的文件名以及为该文件分配的inode地址计入新id0地址的第一位
+    Dir new_dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
+    strcpy(new_dir[0].file_name, name);
+    int cur_inode_addr = iAlloc();
+    if (cur_inode_addr == -1) {
+      cout << "ERROR: alloc inode failed" << endl;
+      return 2;
+    }
+    new_dir[0].inodeAddr = cur_inode_addr;
+
+    //设置新条目的inode
+    inode p{};
+    p.inode_id = static_cast<unsigned short>((cur_inode_addr - INODE_TABLE_START_ADDR) / super_block.inode_size);
+    strcpy(p.user_name, cur_user_name);
+    strcpy(p.group_name, cur_group_name);
+    p.link_num = 1;    //只有一个文件指向
+
+    int k;
+
+    //将buf内容存到磁盘块
+    int file_size = static_cast<int>(strlen(file_content));
+    for (k = 0; k < file_size; k += super_block.block_size) {
+      int cur_block_Addr = bAlloc();
+      if (cur_block_Addr == -1) {
+        cout << "ERROR: alloc block failed" << endl;
+        return 3;
+      }
+      p.block_id0[k / super_block.block_size] = cur_block_Addr;
+      fseek(img.file_write, cur_block_Addr, SEEK_SET);
+      fwrite(file_content + k, super_block.block_size, 1, img.file_write);
+    }
+
+
+    //对其他项赋值为-1
+    for (k = file_size / super_block.block_size + 1; k < BLOCK_ID0_NUM; k++) {
+      p.block_id0[k] = -1;
+    }
+
+    if (file_size == 0) {    //长度为0的话也分给它一个block
+      int cur_block_Addr = bAlloc();
+      if (cur_block_Addr == -1) {
+        cout << "ERROR: alloc block failed" << endl;
+        return 3;
+      }
+      p.block_id0[k / super_block.block_size] = cur_block_Addr;
+      //写入到当前目录的磁盘块
+      fseek(img.file_write, cur_block_Addr, SEEK_SET);
+      fwrite(file_content, super_block.block_size, 1, img.file_write);
+
+    }
+    p.size = file_size;
+    p.block_id1 = -1;
+    p.mode = 0;
+    p.mode = MODE_FILE | FILE_DEF_PERMISSION;
+    p.create_time = time(nullptr);
+    p.last_modified_time = time(nullptr);
+    p.last_read_time = time(nullptr);
+
+
+    //当前文件的inode写回
+    fseek(img.file_write, cur_inode_addr, SEEK_SET);
+    fwrite(&p, sizeof(inode), 1, img.file_write);
+
+    //将当前目录的Block写回
+    fseek(img.file_write, cur.block_id0[first_empty_id0], SEEK_SET);
+    fwrite(new_dir, sizeof(dir), 1, img.file_write);
+
+    //将该文件所在路径inode写回
+    cur.link_num++;
+    fseek(img.file_write, parent_inode_addr, SEEK_SET);
+    fwrite(&cur, sizeof(inode), 1, img.file_write);
+    fflush(img.file_write);
+    return 0;
+
+  } else{
+    cout<<"error: There is not enough id0 dir in this inode.";
     return 4;
+  }
 }
 
 /*
@@ -661,9 +821,7 @@ void fs::ls(int parent_inode_addr, bool isAll) {
       }
       //当没有使用ls -a时，每找到一个以"."开头的文件就需要跳过，并把cnt减1，防止多显示。
       if (!isAll && dir[j].file_name[0] == '.') {
-        if (tmp.flag == false) {
-          cnt--;
-        }
+        i++;
         continue;
       }
       //输出信息
@@ -844,9 +1002,18 @@ void fs::touch(int parent_inode_addr, char name[], char buf[]) {
   }
 
   int i = 0;
+
+  int first_empty_id0 = -1;//第一个找到的全空的id0
+  bool is_first_empty_id0 = true;//用于first_empty_id0的寻找
+
+
   while (i < BLOCK_NUM_PER_INODE) {
 
     if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
+      if(is_first_empty_id0){
+        first_empty_id0 = i / Dir_ITEM_NUM_PER_BLOCK;
+        is_first_empty_id0 = false;
+      }
       i += Dir_ITEM_NUM_PER_BLOCK;
       continue;
     }
@@ -868,6 +1035,7 @@ void fs::touch(int parent_inode_addr, char name[], char buf[]) {
       i++;
     }
   }
+
 
   //文件不存在，创建一个空文件
   if (isPermitWrite(cur)) {
