@@ -660,8 +660,8 @@ void fs::ls(int parent_inode_addr, bool isAll) {
         continue;
       }
       //当没有使用ls -a时，每找到一个以"."开头的文件就需要跳过，并把cnt减1，防止多显示。
-      if(!isAll && dir[j].file_name[0] == '.'){
-        if(tmp.flag == false) {
+      if (!isAll && dir[j].file_name[0] == '.') {
+        if (tmp.flag == false) {
           cnt--;
         }
         continue;
@@ -1097,7 +1097,7 @@ void fs::commandLine(char *cmd) {
     } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "l") != nullptr) {
       lsl(cur_dir_addr);
       return;
-    } else if(strstr(argv2, "-") != nullptr && strstr(argv2, "a") != nullptr){
+    } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "a") != nullptr) {
       ls(cur_dir_addr, true);
       return;
     } else {
@@ -1213,9 +1213,9 @@ void fs::commandLine(char *cmd) {
  */
 void fs::commandLinePrompt() {
   if (strcmp(cur_user_name, "root") == 0) {
-    cout << "[root@Mimic]"<<convertCurDir(cur_dir_name,cur_user_dir_name)<<"# ";
+    cout << "[root@Mimic]" << convertCurDir(cur_dir_name, cur_user_dir_name) << "# ";
   } else {
-    cout <<"[" << cur_user_name << "@Mimic]"<<convertCurDir(cur_dir_name,cur_user_dir_name)<<"$ ";
+    cout << "[" << cur_user_name << "@Mimic]" << convertCurDir(cur_dir_name, cur_user_dir_name) << "$ ";
   }
 }
 
