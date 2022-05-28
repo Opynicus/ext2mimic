@@ -40,7 +40,7 @@ class fs {
   void ls(int parent_inode_addr, bool isAll);
 
   //ls -l命令，显示该目录下所有文件及目录具体信息
-  void lsl(int parent_inode_addr);
+  void lsl(int parent_inode_addr, bool isAll);
 
   //rmdir命令，移除文件夹命令
   int rmdir(int parent_inode_addr, char name[]);

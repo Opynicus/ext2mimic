@@ -13,7 +13,7 @@ string _getLine(int maxNum, string(*func)());
 string getPasswdConfirm(int maxNum);
 string getRegular(int maxNum);
 string getPasswd(int maxNum);
-string convertCurDir(char* dir, char*parse);
+string convertCurDir(char *dir, char *parse);
 vector<string> splitDir(char *dir, char *parse);
 string parseDir(char *dir, char *parse);
 #endif //EXT2MIMIC_UTILS_H

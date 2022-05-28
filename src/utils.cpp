@@ -111,13 +111,13 @@ string convertCurDir(char *dir, char *parse) {
  * If input dir start with '~',
  * convert '~' to '/home/#username#/'
  */
-string parseDir(char *dir, char *parse){
+string parseDir(char *dir, char *parse) {
   string temp_dir = dir;
   string temp_user_dir = parse;
-  if(temp_dir == "~"){
+  if (temp_dir == "~") {
     return temp_user_dir;
   }
-  if(temp_dir[0] == '~'){
+  if (temp_dir[0] == '~') {
     return temp_user_dir + temp_dir.substr(1);
   }
   return temp_dir;
@@ -127,21 +127,21 @@ string parseDir(char *dir, char *parse){
  * Split dir to vector<string>.
  * if input dir start with '~' or '/',
  */
-vector<string> splitDir(char *dir, char *parse){
-  string parsed_dir = parseDir(dir,parse);
+vector<string> splitDir(char *dir, char *parse) {
+  string parsed_dir = parseDir(dir, parse);
   vector<string> split_dir;
-  int i=0;
+  int i = 0;
   int n = parsed_dir.length();
-  if(parsed_dir[0] == '/'){
+  if (parsed_dir[0] == '/') {
     split_dir.push_back("/");
     i++;
   }
-  while(i<n){
+  while (i < n) {
     int j;
-    for(j = i; j<n&&parsed_dir[j]!='/' ;j++);
-    string sub = parsed_dir.substr(i,j-i);
+    for (j = i; j < n && parsed_dir[j] != '/'; j++);
+    string sub = parsed_dir.substr(i, j - i);
     split_dir.push_back(sub);
-    i = j+1;
+    i = j + 1;
   }
   return split_dir;
 }

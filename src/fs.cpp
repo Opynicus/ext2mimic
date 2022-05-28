@@ -234,7 +234,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
   while (i < BLOCK_NUM_PER_INODE) {
     int dir_in_block = i / Dir_ITEM_NUM_PER_BLOCK;
     if (cur.block_id0[dir_in_block] == -1) {
-      if(is_first_empty_id0){
+      if (is_first_empty_id0) {
         first_empty_id0 = i / Dir_ITEM_NUM_PER_BLOCK;
         is_first_empty_id0 = false;
       }
@@ -333,7 +333,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
     fwrite(&cur, sizeof(inode), 1, img.file_write);
     fflush(img.file_write);
     return 0;
-  } else if (first_empty_id0 != -1){
+  } else if (first_empty_id0 != -1) {
     //启用一个新的id0地址,并为止分配一个数据块来存储地址
     cur.block_id0[first_empty_id0] = bAlloc();
 
@@ -394,7 +394,7 @@ int fs::mkdir(int parent_inode_addr, char *name) {
     fflush(img.file_write);
     return 0;
 
-  }else {
+  } else {
     cout << "ERROR: no free dir, mkdir failed" << endl;
     return 5;
   }
@@ -504,7 +504,6 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
   int i = 0;
   int find_pos_i = -1, find_pos_j = -1;
 
-
   int first_empty_id0 = -1;//第一个找到的全空的id0
   bool is_first_empty_id0 = true;//用于first_empty_id0的寻找
 
@@ -512,7 +511,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
   while (i < BLOCK_NUM_PER_INODE) {
 
     if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
-      if(is_first_empty_id0){
+      if (is_first_empty_id0) {
         first_empty_id0 = i / Dir_ITEM_NUM_PER_BLOCK;
         is_first_empty_id0 = false;
       }
@@ -624,7 +623,7 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
     fwrite(&cur, sizeof(inode), 1, img.file_write);
     fflush(img.file_write);
     return 0;
-  } else if(first_empty_id0 != -1){
+  } else if (first_empty_id0 != -1) {
     //启用一个新的id0地址,并为止分配一个数据块来存储地址
     cur.block_id0[first_empty_id0] = bAlloc();
 
@@ -702,8 +701,8 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
     fflush(img.file_write);
     return 0;
 
-  } else{
-    cout<<"error: There is not enough id0 dir in this inode.";
+  } else {
+    cout << "error: There is not enough id0 dir in this inode.";
     return 4;
   }
 }
@@ -819,7 +818,7 @@ void fs::ls(int parent_inode_addr, bool isAll) {
       if (i > 2 && ((strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") == 0))) {
         continue;
       }
-      //当没有使用ls -a时，每找到一个以"."开头的文件就需要跳过，并把cnt减1，防止多显示。
+      //当没有使用ls -a时，每找到一个以"."开头的文件就需要跳过，并把i加1，防止多显示。
       if (!isAll && dir[j].file_name[0] == '.') {
         i++;
         continue;
@@ -1010,7 +1009,7 @@ void fs::touch(int parent_inode_addr, char name[], char buf[]) {
   while (i < BLOCK_NUM_PER_INODE) {
 
     if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
-      if(is_first_empty_id0){
+      if (is_first_empty_id0) {
         first_empty_id0 = i / Dir_ITEM_NUM_PER_BLOCK;
         is_first_empty_id0 = false;
       }
@@ -1262,11 +1261,14 @@ void fs::commandLine(char *cmd) {
     if (strcmp(argv2, "") == 0) {
       ls(cur_dir_addr, false);
       return;
-    } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "l") != nullptr) {
-      lsl(cur_dir_addr);
+    } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "l") != nullptr && strstr(argv2, "a") == nullptr) {
+      lsl(cur_dir_addr, false);
       return;
-    } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "a") != nullptr) {
+    } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "a") != nullptr && strstr(argv2, "l") == nullptr) {
       ls(cur_dir_addr, true);
+      return;
+    } else if (strstr(argv2, "-") != nullptr && strstr(argv2, "l") != nullptr && strstr(argv2, "a") != nullptr) {
+      lsl(cur_dir_addr, true);
       return;
     } else {
       cout << "\tls: invalid option -- '" << argv2 << "'" << endl;
@@ -2343,7 +2345,7 @@ bool fs::access(const char *user_name, const char *passwd) {
   }
 }
 
-void fs::lsl(int parent_inode_addr) {
+void fs::lsl(int parent_inode_addr, bool isAll) {
   inode cur{};
   //取当前目录inode
   fseek(img.file_read, parent_inode_addr, SEEK_SET);
@@ -2387,6 +2389,11 @@ void fs::lsl(int parent_inode_addr) {
       }
 
       if (i > 2 && ((strcmp(dir[j].file_name, ".") == 0 || strcmp(dir[j].file_name, "..") == 0))) {
+        continue;
+      }
+      //当没有使用ls -a时，每找到一个以"."开头的文件就需要跳过，并把i加1，防止多显示。
+      if (!isAll && dir[j].file_name[0] == '.') {
+        i++;
         continue;
       }
       //输出信息
