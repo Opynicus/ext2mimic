@@ -14,15 +14,17 @@ int main(int argc, char **argv) {
   } else {
     fileSystem.format();
   }
-  system("cls");
-  while (!fileSystem.login()) {/*待登录*/};
-  system("cls");
-  fs::fsInfo();
-  while (fileSystem.is_login) {
-    fileSystem.commandLinePrompt();
-    char cmd[100];
-    cin.getline(cmd, 100);
-    fileSystem.commandLine(cmd);
+  while (1) {
+    system("cls");
+    while (!fileSystem.login()) {/*待登录*/};
+    system("cls");
+    fs::fsInfo();
+    while (fileSystem.is_login) {
+      fileSystem.commandLinePrompt();
+      char cmd[100];
+      cin.getline(cmd, 100);
+      fileSystem.commandLine(cmd);
+    }
   }
   return 0;
 }
