@@ -161,7 +161,7 @@ int fs::cd(int parent_inode_addr, const char *name) {
         fread(&tmp, sizeof(inode), 1, img.file_read);
 
         if (((tmp.mode >> 9) & 1) == 1) {     //文件为目录
-          if (!isPermitRead(cur)) {
+          if (!isPermitRead(tmp)) {
             cout << "WARNING: Permission denied(NO READ AUTHORITY)" << endl;
             return 1;
           }
