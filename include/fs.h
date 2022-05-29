@@ -17,6 +17,7 @@
 class fs {
  public:
   bool is_login;  //是否登录
+  bool is_sudo;   //是否执行过sudo指令
 
   //文件系统初始化
   fs(image &img, superBlock &super_block, bitMap &bit_map);
@@ -61,7 +62,7 @@ class fs {
   void exit();
 
   //文件系统命令行
-  void commandLine(char cmd[]);
+  void commandLine(const char cmd[]);
 
   //文件系统信息头
   void commandLinePrompt();
@@ -92,6 +93,9 @@ class fs {
 
   //登陆文件系统
   bool login();
+
+  //sudo指令
+  bool sudo(const char *cmd);
 
   //pwd命令，显示当前目录绝对路径
   inline void pwd();

@@ -120,6 +120,7 @@ fs::fs(image &_image, superBlock &super_block, bitMap &bit_map) : img(_image), s
   nextGID = 0;
   nextUID = 0;
   is_login = false;
+  is_sudo = false;
   strcpy(cur_user_name, "root");
   strcpy(cur_group_name, "root");
   cur_dir_addr = ROOT_DIR_ADDR;
@@ -1286,12 +1287,76 @@ void fs::exit() {
   cur_dir_addr = ROOT_DIR_ADDR;                                                //当前用户目录地址设为根目录地址
   strcpy(cur_dir_name, "/");                                    //当前目录设为"/"
   is_login = false;
+  is_sudo = false;
+}
+
+bool fs::sudo(const char *cmd_in) {
+  //输对过一次root密码，当前用户不用输第二次
+  if (!is_sudo) {
+    cout << endl << "Input root password: ";
+    string password = getPasswd(MAX_PASSWD_LEN);
+
+    //保存和当前用户相关的所有东西
+    int temp_cur_dir = cur_dir_addr;
+    char temp_cur_dir_name[MAX_FILE_NAME];
+    char temp_cur_user_dir_name[MAX_FILE_NAME];
+    char temp1_cur_group_name[MAX_FILE_NAME];
+    char temp1_cur_user_name[MAX_FILE_NAME];
+
+    strcpy(temp_cur_dir_name, cur_dir_name);
+    strcpy(temp_cur_user_dir_name, cur_user_dir_name);
+    strcpy(temp1_cur_group_name, cur_group_name);
+    strcpy(temp1_cur_user_name, cur_user_name);
+
+    //默认当前处于根目录的access方法是屑
+    cda(cur_dir_addr, "/");
+
+    if (!access("root", password.c_str())) {
+      cout << endl << "Root password wrong!" << endl;
+
+      //把（屑）access方法更改的东西改回来
+      cur_dir_addr = temp_cur_dir;
+      strcpy(cur_dir_name, temp_cur_dir_name);
+      strcpy(cur_user_dir_name, temp_cur_user_dir_name);
+      strcpy(cur_group_name, temp1_cur_group_name);
+      strcpy(cur_user_name, temp1_cur_user_name);
+      return false;
+    }
+    //把（屑）access方法更改的东西改回来
+    cur_dir_addr = temp_cur_dir;
+    strcpy(cur_dir_name, temp_cur_dir_name);
+    strcpy(cur_user_dir_name, temp_cur_user_dir_name);
+    strcpy(cur_group_name, temp1_cur_group_name);
+    strcpy(cur_user_name, temp1_cur_user_name);
+    is_sudo = true;
+    cout << endl;
+  }
+
+  //保存当前用户名与用户组
+  char temp_cur_user_name[MAX_FILE_NAME];
+  char temp_cur_group_name[MAX_FILE_NAME];
+
+  strcpy(temp_cur_user_name, cur_user_name);
+  strcpy(temp_cur_group_name, cur_group_name);
+
+  //换成root用户组
+  strcpy(cur_user_name, "root");
+  strcpy(cur_group_name, "root");
+
+  //执行把前五位"sudo "丢弃之后的命令
+  string input = cmd_in;
+  commandLine(input.substr(5).c_str());
+
+  //把用户和用户组，以及被（屑）access方法换掉的所有东西换回来
+  strcpy(cur_user_name, temp_cur_user_name);
+  strcpy(cur_group_name, temp_cur_group_name);
+  return true;
 }
 
 /*
  *  Your Fake CommandLine
  */
-void fs::commandLine(char *cmd) {
+void fs::commandLine(const char *cmd) {
   char argv1[ARGV_LEN];
   char argv2[ARGV_LEN];
   char argv3[ARGV_LEN];
@@ -1415,6 +1480,8 @@ void fs::commandLine(char *cmd) {
       }
       chmod(cur_dir_addr, argv2, num);
     }
+  } else if (strcmp(argv1, "sudo") == 0) {
+    sudo(cmd);
   } else {
     cout << "invalid command: " << cmd << endl;
   }
