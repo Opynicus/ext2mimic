@@ -199,6 +199,47 @@ int fs::cd(int parent_inode_addr, const char *name) {
   return -1;
 }
 
+int fs::cda(int parent_inode_addr, const char *name) {
+  int temp_cur_dir = cur_dir_addr;
+  char temp_cur_dir_name[MAX_FILE_NAME];
+  strcpy(temp_cur_dir_name, cur_dir_name);
+  bool is_access = true;
+  vector<string> split_dir = splitDir(name, cur_user_dir_name);
+  int n = split_dir.size();
+  string parsed_dir = parseDir(name, cur_user_dir_name);
+
+  if (split_dir[0] == "/") {
+    //绝对地址寻址
+    cur_dir_addr = ROOT_DIR_ADDR;
+    strcpy(cur_dir_name, "/");
+    for (int i = 1; i < n; i++) {
+      if (cd(cur_dir_addr, split_dir[i].c_str()) == 0) {
+        continue;
+      } else {
+        is_access = false;
+        break;
+      }
+    }
+  } else {
+    //相对地址寻址
+    for (int i = 0; i < n; i++) {
+      if (cd(cur_dir_addr, split_dir[i].c_str()) == 0) {
+        continue;
+      } else {
+        is_access = false;
+        break;
+      }
+    }
+  }
+
+  if (!is_access) {
+    cur_dir_addr = temp_cur_dir;
+    strcpy(cur_dir_name, temp_cur_dir_name);
+    return 1;
+  }
+
+  return 0;
+}
 /*
  *  mkdir命令，作用是创建子目录
  *  params: 当前目录地址，待建立目录名称
@@ -1280,7 +1321,8 @@ void fs::commandLine(char *cmd) {
       cout << "\n\tcd: missing operand\n\t Try 'cd [fileName]'" << endl;
       return;
     }
-    cd(cur_dir_addr, argv2);
+    cda(cur_dir_addr, argv2);
+//    cd(cur_dir_addr, argv2);
   } else if (strcmp(argv1, "pwd") == 0) {
     pwd();
   } else if (strcmp(argv1, "mkdir") == 0) {

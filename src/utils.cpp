@@ -111,7 +111,7 @@ string convertCurDir(char *dir, char *parse) {
  * If input dir start with '~',
  * convert '~' to '/home/#username#/'
  */
-string parseDir(char *dir, char *parse) {
+string parseDir(const char *dir, char *parse) {
   string temp_dir = dir;
   string temp_user_dir = parse;
   if (temp_dir == "~") {
@@ -127,7 +127,7 @@ string parseDir(char *dir, char *parse) {
  * Split dir to vector<string>.
  * if input dir start with '~' or '/',
  */
-vector<string> splitDir(char *dir, char *parse) {
+vector<string> splitDir(const char *dir, char *parse) {
   string parsed_dir = parseDir(dir, parse);
   vector<string> split_dir;
   int i = 0;
