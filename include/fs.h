@@ -97,6 +97,9 @@ class fs {
   //sudo指令
   bool sudo(const char *cmd);
 
+  //复制
+  int cp(int parent_inode_addr, const char *filename, const char *cp_path);
+
   //pwd命令，显示当前目录绝对路径
   inline void pwd();
 

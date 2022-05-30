@@ -1360,6 +1360,77 @@ bool fs::sudo(const char *cmd_in) {
 }
 
 /*
+ * 复制指令。仅支持复制单个文件至某个目录。
+ *
+ */
+int fs::cp(int parent_inode_addr, const char *filename, const char *cp_path) {
+
+  //读取当前目录。
+  inode cur{};
+  fseek(img.file_read, parent_inode_addr, SEEK_SET);
+  fread(&cur, sizeof(inode), 1, img.file_read);
+  Dir dir[Dir_ITEM_NUM_PER_BLOCK] = {0};
+
+  //在当前目录中寻找该文件的inode
+  int i = 0, j;
+  bool isExist = false;
+  bool flag = false;
+  inode file_inode = {0};
+  while (i < BLOCK_NUM_PER_INODE) {
+    if (cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK] == -1) {
+      i += Dir_ITEM_NUM_PER_BLOCK;
+      continue;
+    }
+    fseek(img.file_read, cur.block_id0[i / Dir_ITEM_NUM_PER_BLOCK], SEEK_SET);
+    fread(dir, sizeof(dir), 1, img.file_read);
+    fflush(img.file_read);
+
+    for (j = 0; j < Dir_ITEM_NUM_PER_BLOCK; j++) {
+      if (strcmp(dir[j].file_name, filename) == 0) {
+        fseek(img.file_read, dir[j].inodeAddr, SEEK_SET);
+        fread(&file_inode, sizeof(inode), 1, img.file_read);
+        if (((file_inode.mode >> 9) & 1) == 0) {    //找到文件
+          isExist = true;
+          flag = true;
+          break;
+        }
+      }
+      i++;
+    }
+    if (flag)
+      break;
+  }
+
+  //没有找到
+  if (!isExist) {
+    cout << endl << "'" << filename << "': No such a file" << endl;
+    return 1;
+  }
+
+  //找到后读取该文件内容至buf
+  char buf[10000] = {0};
+  int n = file_inode.size / super_block.block_size + 1;
+  for (i = 0; i < n; i++) {
+    fseek(img.file_read, file_inode.block_id0[i], SEEK_SET);
+    fread(buf + (i * super_block.block_size), super_block.block_size, 1, img.file_read);
+  }
+
+  //通过调用cda方法的方式验证想要复制到的目录是否存在，并寻找目录地址。
+  int dest_dir_addr = cur_dir_addr;
+  char dest_dir_name[MAX_FILE_NAME];
+  strcpy(dest_dir_name, cur_dir_name);
+  if (cda(parent_inode_addr, cp_path) != 0) {
+    return 2;
+  }
+  swap(dest_dir_addr, cur_dir_addr);
+  strcpy(cur_dir_name, dest_dir_name);
+
+  //通过调用create方法在新目录创建文件。
+  create(dest_dir_addr, filename, buf);
+  return 0;
+}
+
+/*
  *  Your Fake CommandLine
  */
 void fs::commandLine(const char *cmd) {
@@ -1485,6 +1556,15 @@ void fs::commandLine(const char *cmd) {
         num = num * 8 + argv3[i] - '0';
       }
       chmod(cur_dir_addr, argv2, num);
+    }
+  } else if (strcmp(argv1, "cp") == 0) {
+    argv2[0] = '\0';
+    argv3[0] = '\0';
+    sscanf(cmd, "%s%s%s", argv1, argv2, argv3);
+    if (strlen(argv2) == 0 || strlen(argv3) == 0) {
+      cout << "usage: cp [filename] [path] : Copy file to path" << endl;
+    } else {
+      cp(cur_dir_addr, argv2, argv3);
     }
   } else if (strcmp(argv1, "sudo") == 0) {
     sudo(cmd);
