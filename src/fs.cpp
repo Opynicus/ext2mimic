@@ -1601,18 +1601,20 @@ void fs::help() {
   cout << "rmdir [dirName] : Delete dir" << endl;
   cout << "cd [dirName] : Change current directory" << endl;
   cout << "cat [fileName] : Display file content" << endl;
+  cout << "cp [fileName] [dirName] : Copy file to directory" << endl;
   cout << "ls [-l]: List the file and directory (-l: display file type, permissions, owner, file size)" << endl;
+  cout << "   [-a]: List all of the file and directory (-a: display all files including that start with '.')" << endl;
   cout << "chmod [fileName] [permissions] : Change the file permissions" << endl;
   cout << "touch [fileName] : Create a new empty file" << endl;
   cout << "stat [fileName | dirName] : Display file or dir detailed information" << endl;
   cout << "rename [fileName | dirName] [fileName | dirName] : Rename a file or dir" << endl;
   cout << "vi/vim/nano [fileName] : Edit file with fake Vi" << endl;
+  cout << "sudo [command] : Get ROOT permission in a single command" << endl;
   cout << "pwd : Display current dir" << endl;
   cout << "useradd : Add a user" << endl;
   cout << "userdel : Delete a user" << endl;
-  cout << "exit : Exit the file system" << endl;
+  cout << "exit : Logout" << endl;
   cout << "" << endl;
-
 }
 
 /*
