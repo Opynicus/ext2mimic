@@ -530,6 +530,7 @@ int fs::bAlloc() {
  * inode分配失败    return 2
  * block分配失败    return 3
  * id0地址耗尽      return 4
+ * 超过最大文件长度限制。（当前为：块大小*id0地址个数） return 5
  */
 int fs::create(int parent_inode_addr, const char *name, char *file_content) {
   if (strlen(name) >= MAX_FILE_NAME) {
@@ -614,6 +615,11 @@ int fs::create(int parent_inode_addr, const char *name, char *file_content) {
 
     //将buf内容存到磁盘块
     int file_size = static_cast<int>(strlen(file_content));
+    if (file_size > super_block.block_size * BLOCK_ID0_NUM) {
+      cout << endl << "Save Failed. Exceeded max file length :" << super_block.block_size * BLOCK_ID0_NUM << "Bytes"
+           << endl;
+      return 5;
+    }
     for (k = 0; k < file_size; k += super_block.block_size) {
       int cur_block_Addr = bAlloc();
       if (cur_block_Addr == -1) {
@@ -1670,6 +1676,11 @@ void fs::fakeVi(int parent_inode_addr, char *name, char *buf) {
 
 void fs::writeFile(inode fileInode, int fileInodeAddr, char *buf) {
   int read_len = strlen(buf);    //文件长度，单位为字节
+  if (read_len > super_block.block_size * BLOCK_ID0_NUM) {
+    cout << endl << "Save Failed. Exceeded max file length:" << super_block.block_size * BLOCK_ID0_NUM << "Bytes"
+         << endl;
+    return;
+  }
   for (int k = 0; k < read_len; k += super_block.block_size) {    //最多10次，10个磁盘快，即最多5K
     //分配这个inode的磁盘块，从控制台读取内容
     int curblockAddr;
@@ -1686,7 +1697,8 @@ void fs::writeFile(inode fileInode, int fileInodeAddr, char *buf) {
     }
     //写入到当前目录的磁盘块
     fseek(img.file_write, curblockAddr, SEEK_SET);
-    fwrite(buf + k * super_block.block_size, super_block.block_size, 1, img.file_write);
+//    fwrite(buf + k * super_block.block_size, super_block.block_size, 1, img.file_write); Will Cause SegmetFault!
+    fwrite(buf + k, super_block.block_size, 1, img.file_write);
     fflush(img.file_write);
   }
   //更新该文件大小
